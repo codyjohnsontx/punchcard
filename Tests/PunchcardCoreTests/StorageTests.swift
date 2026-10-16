@@ -90,12 +90,47 @@ private func entry(_ clientID: Int64, start: Date, end: Date?) -> Entry {
     @Test func duplicateNameDifferingInCaseThrows() throws {
         let clients = ClientRepository(database: try .inMemory())
         try clients.insert(name: "Acme", at: t0)
-        #expect(throws: DatabaseError.self) { try clients.insert(name: "ACME", at: t0) }
+        #expect(throws: ClientNameError.duplicate) { try clients.insert(name: "ACME", at: t0) }
     }
 
-    @Test func blankNameThrows() throws {
+    @Test func duplicateNonASCIINameDifferingInCaseThrows() throws {
         let clients = ClientRepository(database: try .inMemory())
-        #expect(throws: DatabaseError.self) { try clients.insert(name: "  ", at: t0) }
+        try clients.insert(name: "Émile", at: t0)
+        #expect(throws: ClientNameError.duplicate) { try clients.insert(name: "ÉMILE", at: t0) }
+    }
+
+    @Test func namesAreTrimmedAndNFCNormalized() throws {
+        let clients = ClientRepository(database: try .inMemory())
+        let acme = try clients.insert(name: " Acme\n", at: t0)
+        #expect(acme.name == "Acme")
+        #expect(throws: ClientNameError.duplicate) { try clients.insert(name: "Acme ", at: t0) }
+
+        let decomposed = try clients.insert(name: "Cafe\u{301}", at: t0)
+        #expect(decomposed.name.unicodeScalars.elementsEqual("Caf\u{E9}".unicodeScalars))
+    }
+
+    @Test(arguments: ["  ", "\t", "\u{A0}", " \n\u{A0}\t "])
+    func blankNameThrows(name: String) throws {
+        let clients = ClientRepository(database: try .inMemory())
+        #expect(throws: ClientNameError.blank) { try clients.insert(name: name, at: t0) }
+    }
+
+    @Test func renameToAnotherClientsNameInDifferentCaseThrows() throws {
+        let clients = ClientRepository(database: try .inMemory())
+        try clients.insert(name: "Émile", at: t0)
+        var acme = try clients.insert(name: "Acme", at: t0)
+        acme.name = "émile"
+        #expect(throws: ClientNameError.duplicate) { try clients.update(acme) }
+        #expect(try clients.find(id: acme.id!)?.name == "Acme")
+    }
+
+    @Test func renameToOwnNameInDifferentCaseSucceeds() throws {
+        let clients = ClientRepository(database: try .inMemory())
+        var emile = try clients.insert(name: "émile", at: t0)
+        emile.name = " Émile "
+        let stored = try clients.update(emile)
+        #expect(stored.name == "Émile")
+        #expect(try clients.find(id: emile.id!) == stored)
     }
 
     @Test func deletingClientWithEntriesThrows() throws {

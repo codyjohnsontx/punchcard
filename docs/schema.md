@@ -17,13 +17,17 @@ On macOS both apps use the same path, so they share one file.
 
 ## Connection pragmas
 
-Set on every connection:
+Set on every connection, in this order:
 
 ```sql
-PRAGMA journal_mode = WAL;
-PRAGMA foreign_keys = ON;
 PRAGMA busy_timeout = 2000;
+PRAGMA foreign_keys = ON;
+PRAGMA journal_mode = WAL;
 ```
+
+Switching a new file to WAL can fail at once with `SQLITE_BUSY` while another connection is
+opening it, without waiting on `busy_timeout`. Retry `journal_mode = WAL` on `SQLITE_BUSY`
+until the busy timeout has passed.
 
 `foreign_keys` is off by default in SQLite. Without it, a client that has entries can be deleted.
 
@@ -61,11 +65,25 @@ totals are shown. An entry that crosses midnight is stored whole and split when 
 | Column | Type | Notes |
 | --- | --- | --- |
 | `id` | INTEGER PRIMARY KEY | |
-| `name` | TEXT NOT NULL | Unique ignoring case (`COLLATE NOCASE`); must not be blank |
+| `name` | TEXT NOT NULL | Unique ignoring case; must not be blank. See [Client names](#client-names) |
 | `archived_at` | INTEGER | When the client was archived; NULL while active |
 | `created_at` | INTEGER NOT NULL | |
 
 Migration 1 seeds one client named `Default`.
+
+#### Client names
+
+SQLite's `COLLATE NOCASE` and `trim()` only handle ASCII, so the schema is just a backstop.
+Every app must apply this rule before inserting or renaming a client:
+
+1. Trim leading and trailing Unicode whitespace and newlines (`White_Space` characters,
+   including tab and no-break space).
+2. Normalize to Unicode NFC. Store this result.
+3. Refuse the name as blank if it is empty.
+4. Refuse the name as a duplicate if it equals the name of any other client under Unicode
+   case-insensitive comparison (full case folding of both names, compared as canonically
+   equivalent strings). When renaming, the client being renamed does not count, so it can
+   change only the case of its own name.
 
 ### `entries`
 
