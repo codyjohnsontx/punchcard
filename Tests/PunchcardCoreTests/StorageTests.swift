@@ -53,16 +53,11 @@ private func entry(_ clientID: Int64, start: Date, end: Date?) -> Entry {
         #expect(try ClientRepository(database: second).all().count == 1)
     }
 
-    @Test func concurrentOpensOfUnmigratedFileMigrateOnce() async throws {
+    @Test func concurrentOpensOfNewFileMigrateOnce() async throws {
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
             .appendingPathComponent("punchcard.sqlite")
         defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
-        try FileManager.default.createDirectory(
-            at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
-        try DatabaseQueue(path: url.path).inDatabase { db in
-            try db.execute(sql: "PRAGMA journal_mode = WAL")
-        }
 
         try await withThrowingTaskGroup(of: Void.self) { group in
             for _ in 0..<8 {

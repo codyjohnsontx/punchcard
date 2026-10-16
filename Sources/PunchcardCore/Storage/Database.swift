@@ -33,12 +33,21 @@ public final class Database: Sendable {
     }
 
     private static func configuration() -> Configuration {
+        let busyTimeout: TimeInterval = 2
         var config = Configuration()
         config.foreignKeysEnabled = true
-        config.busyMode = .timeout(2)
+        config.busyMode = .timeout(busyTimeout)
         config.prepareDatabase { db in
             // In-memory databases report "memory" and ignore the request.
-            try db.execute(sql: "PRAGMA journal_mode = WAL")
+            let deadline = Date(timeIntervalSinceNow: busyTimeout)
+            while true {
+                do {
+                    try db.execute(sql: "PRAGMA journal_mode = WAL")
+                    return
+                } catch let error as DatabaseError where error.resultCode == .SQLITE_BUSY && Date() < deadline {
+                    Thread.sleep(forTimeInterval: 0.01)
+                }
+            }
         }
         return config
     }
