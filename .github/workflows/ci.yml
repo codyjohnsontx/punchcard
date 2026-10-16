@@ -1,0 +1,21 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build-test:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - run: swift --version
+      - run: swift build -c release
+      - run: make test
+      - run: scripts/build-app.sh
+      - run: codesign --verify --verbose dist/Punchcard.app
+      - run: lipo dist/Punchcard.app/Contents/MacOS/Punchcard -verify_arch arm64 x86_64
