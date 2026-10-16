@@ -1,6 +1,6 @@
 import PunchcardCore
 import Testing
 
-@Test func bundleIdentifierMatchesPackaging() {
-    #expect(AppInfo.bundleIdentifier == "com.codyjohnsontx.punchcard")
+@Test func appNameIsPunchcard() {
+    #expect(AppInfo.name == "Punchcard")
 }
