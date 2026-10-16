@@ -150,6 +150,14 @@ private func entry(_ clientID: Int64, start: Date, end: Date?) -> Entry {
         #expect(try clients.find(id: acme.id!) == nil)
     }
 
+    @Test func clientsAreOrderedByNameIgnoringCaseAndAccents() throws {
+        let clients = ClientRepository(database: try .inMemory())
+        for name in ["Zeta", "Émile", "acme", "émilie"] {
+            try clients.insert(name: name, at: t0)
+        }
+        #expect(try clients.all().map(\.name) == ["acme", "Default", "Émile", "émilie", "Zeta"])
+    }
+
     @Test func archivedClientsAreHiddenByDefault() throws {
         let clients = ClientRepository(database: try .inMemory())
         var acme = try clients.insert(name: "acme", at: t0)

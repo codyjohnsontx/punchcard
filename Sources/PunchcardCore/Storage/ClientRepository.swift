@@ -14,11 +14,12 @@ public struct ClientRepository: Sendable {
     /// All clients ordered by name, active ones only unless `includeArchived`.
     public func all(includeArchived: Bool = false) throws -> [Client] {
         try database.queue.read { db in
-            var request = Client.order(sql: "name COLLATE NOCASE")
+            var request = Client.all()
             if !includeArchived {
                 request = request.filter(sql: "archived_at IS NULL")
             }
             return try request.fetchAll(db)
+                .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
         }
     }
 
