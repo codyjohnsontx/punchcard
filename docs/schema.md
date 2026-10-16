@@ -41,8 +41,11 @@ The Tauri app embeds the same files and applies them with the same algorithm.
   open the database ("This database was created by a newer version of Punchcard") and do not
   write to it.
 - Otherwise apply each file numbered above `user_version`, in order. Each file runs in its own
-  transaction, which also sets `user_version` to the file's number before it commits.
-  The files themselves do not set `user_version`.
+  `BEGIN IMMEDIATE` transaction, which also sets `user_version` to the file's number before it
+  commits. The files themselves do not set `user_version`.
+- Read `user_version` inside that transaction, and skip the file if it is already at or above
+  the file's number. Another process opening the same new file at the same time may have applied
+  it first.
 
 ## Tables (schema version 1)
 

@@ -14,14 +14,16 @@ enum Migrator {
         let migrations = try load()
         let latest = migrations.last?.version ?? 0
         try queue.writeWithoutTransaction { db in
-            let current = try Int.fetchOne(db, sql: "PRAGMA user_version") ?? 0
-            guard current <= latest else {
-                throw DatabaseOpenError.newerSchema(found: current, supported: latest)
-            }
-            for migration in migrations where migration.version > current {
-                try db.inTransaction {
-                    try db.execute(sql: migration.sql)
-                    try db.execute(sql: "PRAGMA user_version = \(migration.version)")
+            for migration in migrations {
+                try db.inTransaction(.immediate) {
+                    let current = try Int.fetchOne(db, sql: "PRAGMA user_version") ?? 0
+                    guard current <= latest else {
+                        throw DatabaseOpenError.newerSchema(found: current, supported: latest)
+                    }
+                    if current < migration.version {
+                        try db.execute(sql: migration.sql)
+                        try db.execute(sql: "PRAGMA user_version = \(migration.version)")
+                    }
                     return .commit
                 }
             }
@@ -37,6 +39,7 @@ enum Migrator {
             .contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
             .filter { $0.pathExtension == "sql" }
             .sorted { $0.lastPathComponent < $1.lastPathComponent }
+        guard !files.isEmpty else { throw MigrationError.missingMigrations }
         return try files.enumerated().map { index, url in
             let name = url.lastPathComponent
             guard let version = Int(name.prefix(4)), version == index + 1,
