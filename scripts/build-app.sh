@@ -46,8 +46,13 @@ sed -e "s/__VERSION__/$version/" -e "s/__BUILD__/$build/" Packaging/Info.plist >
 plutil -lint "$app/Contents/Info.plist" >/dev/null
 
 # Ad-hoc signing is required: Apple silicon refuses to launch an unsigned bundle.
+# SwiftPM writes an Info.plist only into bundles with processed resources; codesign
+# rejects a bundle without one, and the app's own signature seals it as plain resources.
 for bundle in ${bundles[@]+"${bundles[@]}"}; do
-  codesign --force --sign - "$app/Contents/Resources/$(basename "$bundle")"
+  nested="$app/Contents/Resources/$(basename "$bundle")"
+  if [ -f "$nested/Info.plist" ]; then
+    codesign --force --sign - "$nested"
+  fi
 done
 codesign --force --sign - "$app"
 

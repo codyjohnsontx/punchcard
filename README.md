@@ -35,12 +35,14 @@ Xcode can open `Package.swift` directly for previews and debugging.
 - `Sources/PunchcardCore`: models and logic, no UI
 - `Sources/Punchcard`: the SwiftUI menu bar app
 - `Tests/PunchcardCoreTests`: tests for the core library
+- `docs/schema.md`: the SQLite data format shared with the planned Tauri app
 - `Packaging`: `Info.plist` template and source icon
 - `scripts`: app bundle and icon scripts
 
 ## Roadmap
 
-A Tauri app for Windows and Linux, in this repository, sharing the same data format.
+A Tauri app for Windows and Linux, in this repository, sharing the same data format
+([docs/schema.md](docs/schema.md)).
 
 ## License
 

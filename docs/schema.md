@@ -1,0 +1,109 @@
+# Punchcard data format
+
+This is the contract between the macOS app and the planned Tauri app for Windows and Linux.
+Both apps read and write the same SQLite file layout, created by the same migration files,
+using the same algorithm. Every change to the schema updates this document.
+
+## Location
+
+| OS | Path |
+| --- | --- |
+| macOS | `~/Library/Application Support/Punchcard/punchcard.sqlite` |
+| Linux | `~/.local/share/punchcard/punchcard.sqlite` |
+| Windows | `%APPDATA%\Punchcard\punchcard.sqlite` |
+
+SQLite keeps `-wal` and `-shm` files next to it while the database is open.
+On macOS both apps use the same path, so they share one file.
+
+## Connection pragmas
+
+Set on every connection:
+
+```sql
+PRAGMA journal_mode = WAL;
+PRAGMA foreign_keys = ON;
+PRAGMA busy_timeout = 2000;
+```
+
+`foreign_keys` is off by default in SQLite. Without it, a client that has entries can be deleted.
+
+## Migrations
+
+The schema is built by the numbered files in
+[`Sources/PunchcardCore/Resources/Migrations`](../Sources/PunchcardCore/Resources/Migrations).
+The Tauri app embeds the same files and applies them with the same algorithm.
+
+- Files are named `NNNN_name.sql`: four digits, numbered 1, 2, 3 and so on with no gaps.
+  A file never changes once it has been released; later changes go in a new file.
+- `PRAGMA user_version` holds the number of the last applied file. It is the only record of
+  migration progress. There is no migrations table.
+- On open, read `user_version`. If it is higher than the newest file the app knows, refuse to
+  open the database ("This database was created by a newer version of Punchcard") and do not
+  write to it.
+- Otherwise apply each file numbered above `user_version`, in order. Each file runs in its own
+  transaction, which also sets `user_version` to the file's number before it commits.
+  The files themselves do not set `user_version`.
+
+## Tables (schema version 1)
+
+[`0001_initial.sql`](../Sources/PunchcardCore/Resources/Migrations/0001_initial.sql) is the
+exact definition.
+
+All timestamps are UTC instants stored as integer Unix seconds. No time zone is stored.
+Grouping by day, week and month uses the viewing computer's calendar and time zone when the
+totals are shown. An entry that crosses midnight is stored whole and split when totals are shown.
+
+### `clients`
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `id` | INTEGER PRIMARY KEY | |
+| `name` | TEXT NOT NULL | Unique ignoring case (`COLLATE NOCASE`); must not be blank |
+| `archived_at` | INTEGER | When the client was archived; NULL while active |
+| `created_at` | INTEGER NOT NULL | |
+
+Migration 1 seeds one client named `Default`.
+
+### `entries`
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `id` | INTEGER PRIMARY KEY | |
+| `client_id` | INTEGER NOT NULL | References `clients(id)`; `ON DELETE RESTRICT` |
+| `started_at` | INTEGER NOT NULL | |
+| `ended_at` | INTEGER | NULL while the clock runs; never before `started_at` |
+| `note` | TEXT NOT NULL | Optional free text, `''` when unused |
+| `created_at` | INTEGER NOT NULL | |
+| `updated_at` | INTEGER NOT NULL | |
+| `is_running` | INTEGER | Generated: `ended_at IS NULL`. Never written |
+
+Rules the database enforces, so neither app re-implements them:
+
+- **One clock at a time.** The partial unique index `entries_one_running` on `is_running` allows
+  at most one row with `ended_at IS NULL`. To switch clients, end the running entry and start the
+  new one in the same transaction, at the same instant.
+- **No negative entries.** A `CHECK` rejects `ended_at < started_at`.
+- **No orphaned time.** A client that has entries cannot be deleted; archive it instead.
+
+Indexes: `entries_started_at (started_at)` and `entries_client_started (client_id, started_at)`.
+
+### `settings`
+
+A key/value table: `key TEXT PRIMARY KEY`, `value TEXT NOT NULL`. Every value is text.
+A missing key, or a value that does not parse or is out of range, means the default,
+so the table only holds settings the user changed.
+
+| Key | Values | Default |
+| --- | --- | --- |
+| `week_start_day` | `1`..`7`, ISO numbering, 1 = Monday | `1` (Monday) |
+| `idle_threshold_seconds` | integer, `60`..`7200`; idle or asleep longer than this asks "keep or drop?" | `600` (10 minutes) |
+| `menu_bar_style` | `time` (running time, e.g. `● 1:42`) or `icon` | `time` |
+| `onboarded_at` | Unix seconds; set once first-launch tasks have run | absent |
+
+Not stored in the database, on purpose:
+
+- **Launch at login** (on by default). The operating system is the source of truth. The app
+  turns it on during first-launch tasks, recorded by `onboarded_at`, and afterwards reads and
+  changes it through the OS.
+- **The global start/stop shortcut.** It is specific to each platform and kept in that app's own
+  preferences.
