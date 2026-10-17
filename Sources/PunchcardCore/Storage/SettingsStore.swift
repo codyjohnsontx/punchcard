@@ -24,7 +24,11 @@ public struct SettingsStore: Sendable {
 
     /// First day of the week, ISO numbering: 1 = Monday ... 7 = Sunday. Default Monday.
     public var weekStartDay: Int {
-        get throws { try int("week_start_day", in: 1...7) ?? Self.defaultWeekStartDay }
+        get throws { try database.queue.read(Self.weekStartDay) }
+    }
+
+    static func weekStartDay(_ db: GRDB.Database) throws -> Int {
+        try int("week_start_day", in: 1...7, db) ?? defaultWeekStartDay
     }
 
     public func setWeekStartDay(_ day: Int) throws {
@@ -44,7 +48,11 @@ public struct SettingsStore: Sendable {
 
     /// What the menu bar shows. Default: the running time.
     public var menuBarStyle: MenuBarStyle {
-        get throws { try string("menu_bar_style").flatMap(MenuBarStyle.init(rawValue:)) ?? Self.defaultMenuBarStyle }
+        get throws { try database.queue.read(Self.menuBarStyle) }
+    }
+
+    static func menuBarStyle(_ db: GRDB.Database) throws -> MenuBarStyle {
+        try string("menu_bar_style", db).flatMap(MenuBarStyle.init(rawValue:)) ?? defaultMenuBarStyle
     }
 
     public func setMenuBarStyle(_ style: MenuBarStyle) throws {
@@ -61,13 +69,19 @@ public struct SettingsStore: Sendable {
     }
 
     private func string(_ key: String) throws -> String? {
-        try database.queue.read { db in
-            try String.fetchOne(db, sql: "SELECT value FROM settings WHERE key = ?", arguments: [key])
-        }
+        try database.queue.read { db in try Self.string(key, db) }
     }
 
     private func int(_ key: String, in range: ClosedRange<Int>) throws -> Int? {
-        try string(key).flatMap(Int.init).flatMap { range.contains($0) ? $0 : nil }
+        try database.queue.read { db in try Self.int(key, in: range, db) }
+    }
+
+    private static func string(_ key: String, _ db: GRDB.Database) throws -> String? {
+        try String.fetchOne(db, sql: "SELECT value FROM settings WHERE key = ?", arguments: [key])
+    }
+
+    private static func int(_ key: String, in range: ClosedRange<Int>, _ db: GRDB.Database) throws -> Int? {
+        try string(key, db).flatMap(Int.init).flatMap { range.contains($0) ? $0 : nil }
     }
 
     private func set(_ key: String, _ value: String) throws {
