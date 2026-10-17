@@ -26,13 +26,15 @@ public struct EntryRepository: Sendable {
     /// Entries that overlap `[start, end)`, oldest first. A running entry counts as
     /// extending to the present, so it overlaps any interval ending after its start.
     public func entries(overlapping start: Date, _ end: Date) throws -> [Entry] {
-        try database.queue.read { db in
-            try Entry
-                .filter(sql: "started_at < ? AND (ended_at IS NULL OR ended_at > ?)",
-                        arguments: [Int64(end.timeIntervalSince1970), Int64(start.timeIntervalSince1970)])
-                .order(sql: "started_at, id")
-                .fetchAll(db)
-        }
+        try database.queue.read { db in try Self.entries(overlapping: start, end, db) }
+    }
+
+    static func entries(overlapping start: Date, _ end: Date, _ db: GRDB.Database) throws -> [Entry] {
+        try Entry
+            .filter(sql: "started_at < ? AND (ended_at IS NULL OR ended_at > ?)",
+                    arguments: [Int64(end.timeIntervalSince1970), Int64(start.timeIntervalSince1970)])
+            .order(sql: "started_at, id")
+            .fetchAll(db)
     }
 
     /// Inserts an entry and returns it as stored (timestamps truncated to whole seconds).
