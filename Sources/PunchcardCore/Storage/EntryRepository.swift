@@ -16,9 +16,11 @@ public struct EntryRepository: Sendable {
 
     /// The running entry, if any.
     public func running() throws -> Entry? {
-        try database.queue.read { db in
-            try Entry.filter(sql: "ended_at IS NULL").fetchOne(db)
-        }
+        try database.queue.read(Self.running)
+    }
+
+    static func running(_ db: GRDB.Database) throws -> Entry? {
+        try Entry.filter(sql: "ended_at IS NULL").fetchOne(db)
     }
 
     /// Entries that overlap `[start, end)`, oldest first. A running entry counts as
