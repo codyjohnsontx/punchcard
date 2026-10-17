@@ -11,8 +11,11 @@ final class AppModel {
     private(set) var snapshot: TrackerSnapshot
     /// Why the database could not be opened; the app then shows this and can only quit.
     let openError: String?
-    /// The last failed read or write, cleared by the next one that succeeds.
-    private(set) var lastError: String?
+    /// The last failed write, cleared by the next write that succeeds.
+    private var writeError: String?
+    /// The last failed read, cleared by the next read that succeeds.
+    private var readError: String?
+    var lastError: String? { writeError ?? readError }
 
     private let database: Database?
     private let engine: TimerEngine?
@@ -42,9 +45,9 @@ final class AppModel {
         if let database {
             do {
                 snapshot = try TrackerSnapshot.load(from: database)
-                lastError = nil
+                readError = nil
             } catch {
-                lastError = error.localizedDescription
+                readError = error.localizedDescription
             }
         }
         updateTicker()
@@ -62,9 +65,9 @@ final class AppModel {
         guard let engine else { return }
         do {
             try action(engine)
-            lastError = nil
+            writeError = nil
         } catch {
-            lastError = error.localizedDescription
+            writeError = error.localizedDescription
         }
         refresh()
     }
