@@ -24,9 +24,10 @@ public struct TimerEngine: Sendable {
     public func start(clientID: Int64, at date: Date? = nil) throws -> Entry {
         let date = Self.wholeSeconds(date ?? now())
         return try database.queue.write { db in
-            if let running = try Self.running(db) {
+            var date = date
+            if let running = try EntryRepository.running(db) {
                 if running.clientID == clientID { return running }
-                try Self.end(running, at: date, db)
+                date = try Self.end(running, at: date, db).endedAt ?? date
             }
             return try Entry(clientID: clientID, startedAt: date, createdAt: date, updatedAt: date)
                 .insertAndFetch(db)
@@ -38,17 +39,13 @@ public struct TimerEngine: Sendable {
     public func stop(at date: Date? = nil) throws -> Entry? {
         let date = Self.wholeSeconds(date ?? now())
         return try database.queue.write { db in
-            guard let running = try Self.running(db) else { return nil }
+            guard let running = try EntryRepository.running(db) else { return nil }
             return try Self.end(running, at: date, db)
         }
     }
 
-    private static func running(_ db: GRDB.Database) throws -> Entry? {
-        try Entry.filter(sql: "ended_at IS NULL").fetchOne(db)
-    }
-
-    @discardableResult
     private static func end(_ entry: Entry, at date: Date, _ db: GRDB.Database) throws -> Entry {
+        let date = max(date, entry.startedAt)
         var entry = entry
         entry.endedAt = date
         entry.updatedAt = date

@@ -98,6 +98,35 @@ private func defaultClientID(_ db: PunchcardCore.Database) throws -> Int64 {
         #expect(b.startedAt == local(2026, 10, 12, 10))
     }
 
+    @Test func stopAfterTheClockMovesBackRecordsAZeroLengthEntry() throws {
+        let db = try PunchcardCore.Database.inMemory()
+        let clock = TestClock(local(2026, 10, 12, 10))
+        let engine = TimerEngine(database: db, now: { clock.now })
+        let started = try engine.start(clientID: defaultClientID(db))
+
+        clock.advance(by: -55 * 60)
+        let stopped = try #require(try engine.stop())
+
+        #expect(stopped.endedAt == started.startedAt)
+        #expect(try engine.running() == nil)
+    }
+
+    @Test func switchAfterTheClockMovesBackStartsWhereTheEndedEntryEnds() throws {
+        let db = try PunchcardCore.Database.inMemory()
+        let clock = TestClock(local(2026, 10, 12, 10))
+        let engine = TimerEngine(database: db, now: { clock.now })
+        let second = try secondClient(db)
+        let a = try engine.start(clientID: defaultClientID(db))
+
+        clock.advance(by: -55 * 60)
+        let b = try engine.start(clientID: second)
+
+        let ended = try #require(try EntryRepository(database: db).entries(overlapping: .distantPast, .distantFuture).first)
+        #expect(ended.endedAt == a.startedAt)
+        #expect(b.startedAt == a.startedAt)
+        #expect(try engine.running() == b)
+    }
+
     @Test func startingTheRunningClientChangesNothing() throws {
         let db = try PunchcardCore.Database.inMemory()
         let engine = TimerEngine(database: db)
