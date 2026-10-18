@@ -45,8 +45,8 @@ public struct TimerEngine: Sendable {
     }
 
     /// Drop & continue for an away prompt: ends the entry at `awaySince` and starts a new entry
-    /// for the same client, with the same note, at `returnedAt`. Returns the new entry, or nil
-    /// when the entry had already stopped; it then only clamps its end, as `dropStop` does.
+    /// for the same client at `returnedAt`. Returns the new entry, or nil when the entry had
+    /// already stopped; it then only clamps its end, as `dropStop` does.
     @discardableResult
     public func dropContinue(_ prompt: AwayPrompt) throws -> Entry? {
         try drop(prompt, continuing: true)
@@ -75,8 +75,7 @@ public struct TimerEngine: Sendable {
             guard continuing else { return entry }
             guard wasRunning else { return nil }
             return try Entry(
-                clientID: entry.clientID, startedAt: max(returnedAt, end), note: entry.note,
-                createdAt: now, updatedAt: now
+                clientID: entry.clientID, startedAt: max(returnedAt, end), createdAt: now, updatedAt: now
             ).insertAndFetch(db)
         }
     }
