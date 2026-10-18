@@ -117,7 +117,7 @@ so the table only holds settings the user changed.
 | Key | Values | Default |
 | --- | --- | --- |
 | `week_start_day` | `1`..`7`, ISO numbering, 1 = Monday | `1` (Monday) |
-| `idle_threshold_seconds` | integer, `60`..`7200`; idle or asleep longer than this asks "keep or drop?" | `600` (10 minutes) |
+| `idle_threshold_seconds` | integer, `60`..`7200`; idle or asleep at least this long asks "keep or drop?" | `600` (10 minutes) |
 | `menu_bar_style` | `time` (running time, e.g. `● 1:42`) or `icon` | `time` |
 | `onboarded_at` | Unix seconds; set once first-launch tasks have run | absent |
 

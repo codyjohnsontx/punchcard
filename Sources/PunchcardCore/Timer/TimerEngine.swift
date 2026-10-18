@@ -44,6 +44,42 @@ public struct TimerEngine: Sendable {
         }
     }
 
+    /// Drop & continue for an away prompt: ends the entry at `awaySince` and starts a new entry
+    /// for the same client at `returnedAt`. Returns the new entry, or nil when the entry had
+    /// already stopped; it then only clamps its end, as `dropStop` does.
+    @discardableResult
+    public func dropContinue(_ prompt: AwayPrompt) throws -> Entry? {
+        try drop(prompt, continuing: true)
+    }
+
+    /// Drop & stop for an away prompt: ends the entry at `awaySince`, or at its own end when it
+    /// was stopped earlier than that. Returns the entry as stored, or nil if it was deleted.
+    @discardableResult
+    public func dropStop(_ prompt: AwayPrompt) throws -> Entry? {
+        try drop(prompt, continuing: false)
+    }
+
+    private func drop(_ prompt: AwayPrompt, continuing: Bool) throws -> Entry? {
+        let now = Self.wholeSeconds(now())
+        let awaySince = Self.wholeSeconds(prompt.awaySince)
+        let returnedAt = Self.wholeSeconds(prompt.returnedAt)
+        return try database.queue.write { db in
+            guard var entry = try Entry.fetchOne(db, key: prompt.entryID) else { return nil }
+            let wasRunning = entry.isRunning
+            let end = max(min(entry.endedAt ?? awaySince, awaySince), entry.startedAt)
+            if entry.endedAt != end {
+                entry.endedAt = end
+                entry.updatedAt = now
+                try entry.update(db)
+            }
+            guard continuing else { return entry }
+            guard wasRunning else { return nil }
+            return try Entry(
+                clientID: entry.clientID, startedAt: max(returnedAt, end), createdAt: now, updatedAt: now
+            ).insertAndFetch(db)
+        }
+    }
+
     private static func end(_ entry: Entry, at date: Date, _ db: GRDB.Database) throws -> Entry {
         let date = max(date, entry.startedAt)
         var entry = entry
