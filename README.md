@@ -3,8 +3,9 @@
 A macOS menu bar time tracker for contractors. Start and stop a clock per client and see
 per-day, per-week and per-month totals. Hours only, no money. Your data stays on your Mac.
 
-> Early development. The app currently shows a clock icon in the menu bar with a Quit item;
-> tracking arrives in the next releases.
+> Early development. The menu bar item starts and stops the clock and shows today, this week
+> and this month per client. The History and Settings windows are still empty; they fill in
+> over the next releases.
 
 ## Requirements
 
