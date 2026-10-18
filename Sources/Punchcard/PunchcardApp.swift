@@ -18,7 +18,7 @@ struct PunchcardApp: App {
         .menuBarExtraStyle(.window)
 
         Window("History", id: HistoryView.windowID) {
-            HistoryView()
+            HistoryView(model: model)
         }
         .defaultSize(width: 720, height: 480)
 

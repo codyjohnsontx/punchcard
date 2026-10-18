@@ -19,7 +19,7 @@ final class AppModel {
     private var readError: String?
     var lastError: String? { writeError ?? readError }
 
-    private let database: Database?
+    let database: Database?
     private let engine: TimerEngine?
     private var ticker: Task<Void, Never>?
     private var away = AwayDetector(threshold: TimeInterval(SettingsStore.defaultIdleThresholdSeconds))
