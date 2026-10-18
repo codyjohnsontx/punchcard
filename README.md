@@ -1,15 +1,107 @@
 # Punchcard
 
 A macOS menu bar time tracker for contractors. Start and stop a clock per client and see
-per-day, per-week and per-month totals. Hours only, no money. Your data stays on your Mac.
+per-day, per-week and per-month totals. Hours only, no money. Your data stays on your Mac in a
+SQLite file you own.
 
-> Early development. The menu bar item starts and stops the clock and shows today, this week
-> and this month per client. The History and Settings windows are still empty; they fill in
-> over the next releases.
+> Early days. Version 0.1 starts and stops the clock and shows today, this week and this month
+> per client. The History and Settings windows are still empty; editing entries, managing
+> clients, the away prompt, CSV export, launch at login and a global shortcut arrive in the
+> next releases.
 
 ## Requirements
 
-macOS 14 Sonoma or later.
+macOS 14 Sonoma or later, on Apple silicon or Intel.
+
+## Install
+
+1. Download `Punchcard-<version>-macos.zip` from the
+   [latest release](https://github.com/codyjohnsontx/punchcard/releases/latest).
+2. Double-click the zip to unzip it, then drag `Punchcard.app` into your Applications folder.
+3. Open it once by following [First launch](#first-launch-unsigned-app) below.
+
+Punchcard lives in the menu bar and has no Dock icon. Look for the clock at the top right of
+your screen.
+
+### First launch (unsigned app)
+
+Punchcard is open source but not signed or notarized by Apple, because that needs a paid Apple
+Developer account. The first time you open it, macOS warns that it cannot check the app for
+malicious software. You only need to approve it once.
+
+**macOS 15 Sequoia and later**
+
+1. Double-click `Punchcard.app`. macOS says it was not opened. Click **Done**.
+2. Open **System Settings > Privacy & Security** and scroll down to **Security**.
+3. Next to the message about Punchcard, click **Open Anyway**, then enter your password.
+4. In the dialog that follows, click **Open Anyway**.
+
+Apple removed the Control-click shortcut in Sequoia, so the Settings path above is the way
+through.
+
+**macOS 14 Sonoma**
+
+1. In Finder, Control-click (or right-click) `Punchcard.app` and choose **Open**.
+2. In the dialog, click **Open**.
+
+**Either version, from Terminal**
+
+Clear the quarantine flag the browser added to the download, then open the app normally:
+
+```sh
+xattr -dr com.apple.quarantine /Applications/Punchcard.app
+```
+
+### Check the download
+
+Each release also has a `.sha256` file. Download it next to the zip and run, in that folder:
+
+```sh
+shasum -a 256 -c Punchcard-<version>-macos.zip.sha256
+```
+
+It prints `OK` when the zip is exactly what the release built.
+
+## Using it
+
+- **Start and stop.** Click the menu bar item. With one client, the dropdown has a single
+  Start or Stop button. While the clock runs, the menu bar shows the running time, such as
+  `● 1:42`.
+- **Totals.** The dropdown shows today, this week and this month. Weeks start on Monday.
+  Durations read as hours and minutes, so `160:15` is 160 hours 15 minutes.
+- **Clients.** Punchcard starts with one client named `Default`. Once there are two or more,
+  each client gets its own Start button and totals row, and the menu bar adds the running
+  client's name. Only one clock runs at a time: starting another client stops the running one
+  at the same moment, so no minute is counted twice. Until the Clients tab arrives, add a client
+  from Terminal:
+
+  ```sh
+  sqlite3 ~/Library/Application\ Support/Punchcard/punchcard.sqlite \
+    "INSERT INTO clients (name, created_at) VALUES ('Acme', unixepoch())"
+  ```
+
+- **Quitting.** Quit from the dropdown. A running clock keeps running while the app is closed
+  and is still running when you open it again.
+- **Opening at login.** Not automatic yet. Add Punchcard under
+  **System Settings > General > Login Items** if you want it to start with your Mac.
+
+## Where your data is
+
+Everything is in one SQLite file:
+
+```
+~/Library/Application Support/Punchcard/punchcard.sqlite
+```
+
+The file is yours. Punchcard never sends it anywhere. To back it up, even while the app is
+running:
+
+```sh
+sqlite3 ~/Library/Application\ Support/Punchcard/punchcard.sqlite \
+  ".backup $HOME/punchcard-backup.sqlite"
+```
+
+The tables and rules are documented in [docs/schema.md](docs/schema.md).
 
 ## Build from source
 
@@ -23,13 +115,27 @@ make run     # swift run Punchcard, no app bundle
 make zip     # dist/Punchcard-<version>-macos.zip and its .sha256
 ```
 
-Set `VERSION=x.y.z` for `make app` or `make zip` to stamp the bundle version.
+The bundle version comes from the [`VERSION`](VERSION) file. Set `VERSION=x.y.z` for
+`make app` or `make zip` to override it.
 
 With only the Command Line Tools, plain `swift test` builds but runs no tests, because
 SwiftPM does not put Swift Testing on the framework search path; use `make test`.
 With Xcode selected, `swift test` works as usual.
 
 Xcode can open `Package.swift` directly for previews and debugging.
+
+### Releasing
+
+Set `VERSION` to the new version on `main`, then push a matching tag:
+
+```sh
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+The [release workflow](.github/workflows/release.yml) checks that the tag matches `VERSION`,
+runs the tests, builds the universal app, and publishes a GitHub Release with the zip and its
+checksum.
 
 ## Layout
 
@@ -42,8 +148,15 @@ Xcode can open `Package.swift` directly for previews and debugging.
 
 ## Roadmap
 
-A Tauri app for Windows and Linux, in this repository, sharing the same data format
-([docs/schema.md](docs/schema.md)).
+- History window with entry editing, client management, the away prompt ("You were away
+  N min, keep or drop?"), CSV export, settings, launch at login and a global shortcut.
+- A Tauri app for Windows and Linux, in this repository, sharing the same data format
+  ([docs/schema.md](docs/schema.md)).
+
+## Contributing
+
+Issues and pull requests are welcome. Run `make test` and `make app` before opening a pull
+request; CI runs the same steps.
 
 ## License
 

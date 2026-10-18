@@ -16,6 +16,7 @@ jobs:
       - run: swift --version
       - run: swift build -c release
       - run: make test
-      - run: scripts/build-app.sh
+      - run: scripts/build-app.sh --zip
       - run: codesign --verify --verbose dist/Punchcard.app
       - run: lipo dist/Punchcard.app/Contents/MacOS/Punchcard -verify_arch arm64 x86_64
+      - run: cd dist && shasum -a 256 -c Punchcard-*-macos.zip.sha256

@@ -1,12 +1,17 @@
 #!/usr/bin/env bash
 # Builds a universal release binary and assembles dist/Punchcard.app, ad-hoc signed.
 # Needs only the Command Line Tools. Usage: [VERSION=x.y.z] scripts/build-app.sh [--zip]
+# The version defaults to the VERSION file at the repository root.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
 name="Punchcard"
-version="${VERSION:-0.0.0-dev}"
+version="${VERSION:-$(tr -d '[:space:]' < VERSION)}"
+if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+  echo "version must look like 1.2.3 or 1.2.3-beta.1, got: $version" >&2
+  exit 2
+fi
 build="${version%%-*}"
 zip=false
 for arg in "$@"; do
