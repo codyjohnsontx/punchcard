@@ -23,7 +23,7 @@ final class AppModel {
     private let engine: TimerEngine?
     private var ticker: Task<Void, Never>?
     private var away = AwayDetector(threshold: TimeInterval(SettingsStore.defaultIdleThresholdSeconds))
-    private let idle: any IdleSource = SystemIdleSource()
+    private let idle = SystemIdleSource()
     private var isAskingAway = false
 
     init() {
