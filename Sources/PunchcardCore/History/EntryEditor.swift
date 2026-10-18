@@ -58,7 +58,7 @@ public enum EntryEditError: Error, Equatable, LocalizedError {
     case anotherEntryRunning
     /// The entry being edited was deleted meanwhile.
     case missing
-    /// The draft keeps the entry running, but it was stopped meanwhile.
+    /// The entry was running when the editor opened it and was stopped meanwhile.
     case stopped
 
     public var errorDescription: String? {
@@ -84,19 +84,21 @@ public struct EntryEditor: Sendable {
         self.now = now
     }
 
-    /// Inserts `draft` as a new entry, or updates the entry `id` with it, and returns the
-    /// entry as stored.
+    /// Inserts `draft` as a new entry, or updates `original`, the entry as the editor opened
+    /// it, and returns the entry as stored.
     @discardableResult
-    public func save(_ draft: EntryDraft, replacing id: Int64? = nil) throws -> Entry {
+    public func save(_ draft: EntryDraft, replacing original: Entry? = nil) throws -> Entry {
         let draft = draft.normalized
         try draft.validate()
         guard let clientID = draft.clientID else { throw EntryEditError.noClient }
         let now = TimerEngine.wholeSeconds(now())
         do {
             return try database.queue.write { db in
-                if let id {
-                    guard var entry = try Entry.fetchOne(db, key: id) else { throw EntryEditError.missing }
-                    if draft.isRunning && !entry.isRunning { throw EntryEditError.stopped }
+                if let original {
+                    guard let id = original.id, var entry = try Entry.fetchOne(db, key: id) else {
+                        throw EntryEditError.missing
+                    }
+                    if entry.endedAt != original.endedAt { throw EntryEditError.stopped }
                     entry.clientID = clientID
                     entry.startedAt = draft.startedAt
                     entry.endedAt = draft.endedAt

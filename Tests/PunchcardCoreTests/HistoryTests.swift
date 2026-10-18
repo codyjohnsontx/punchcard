@@ -306,12 +306,13 @@ private let runningSince10 = entry(12, 1, local(2026, 10, 14, 15, 20), nil)
         let editor = EntryEditor(database: db, now: { clock.now })
 
         let originalID = try #require(original.id)
-        var draft = EntryDraft(try #require(try EntryRepository(database: db).find(id: originalID)))
+        let stored = try #require(try EntryRepository(database: db).find(id: originalID))
+        var draft = EntryDraft(stored)
         #expect(draft == EntryDraft(clientID: defaultID, startedAt: local(2026, 10, 13, 12), endedAt: local(2026, 10, 13, 13)))
         draft.clientID = acmeID
         draft.startedAt = local(2026, 10, 13, 11, 30)
         draft.note = "Moved earlier"
-        let updated = try editor.save(draft, replacing: original.id)
+        let updated = try editor.save(draft, replacing: stored)
 
         #expect(updated.id == original.id)
         #expect(updated.clientID == acmeID)
@@ -331,7 +332,7 @@ private let runningSince10 = entry(12, 1, local(2026, 10, 14, 15, 20), nil)
 
         var draft = EntryDraft(saved)
         draft.endedAt = local(2026, 10, 13, 8)
-        #expect(throws: EntryEditError.endBeforeStart) { try editor.save(draft, replacing: saved.id) }
+        #expect(throws: EntryEditError.endBeforeStart) { try editor.save(draft, replacing: saved) }
         #expect(try EntryRepository(database: db).find(id: #require(saved.id)) == saved)
     }
 
@@ -346,7 +347,7 @@ private let runningSince10 = entry(12, 1, local(2026, 10, 14, 15, 20), nil)
         #expect(EntryEditError.anotherEntryRunning.localizedDescription == "Another entry is already running.")
     }
 
-    @Test func savingARunningDraftAfterTheEntryWasStoppedFailsAndKeepsTheStop() throws {
+    @Test func savingAnEditorOpenedOnARunningEntryAfterItWasStoppedFailsAndKeepsTheStop() throws {
         let db = try PunchcardCore.Database.inMemory()
         let defaultID = try #require(try ClientRepository(database: db).all().first?.id)
         let clock = TestClock(local(2026, 10, 14, 12))
@@ -360,8 +361,13 @@ private let runningSince10 = entry(12, 1, local(2026, 10, 14, 15, 20), nil)
         let stopped = try #require(try EntryRepository(database: db).find(id: id))
 
         let editor = EntryEditor(database: db, now: { clock.now })
-        #expect(throws: EntryEditError.stopped) { try editor.save(draft, replacing: id) }
+        #expect(throws: EntryEditError.stopped) { try editor.save(draft, replacing: running) }
         #expect(EntryEditError.stopped.localizedDescription == "This entry was stopped meanwhile.")
+        #expect(try EntryRepository(database: db).find(id: id) == stopped)
+
+        clock.advance(by: 600)
+        draft.endedAt = clock.now
+        #expect(throws: EntryEditError.stopped) { try editor.save(draft, replacing: running) }
         #expect(try EntryRepository(database: db).find(id: id) == stopped)
         #expect(try engine.running() == nil)
     }
@@ -375,12 +381,12 @@ private let runningSince10 = entry(12, 1, local(2026, 10, 14, 15, 20), nil)
         var draft = EntryDraft(running)
         draft.startedAt = local(2026, 10, 14, 14, 45)
         draft.note = "Call"
-        let updated = try editor.save(draft, replacing: running.id)
+        let updated = try editor.save(draft, replacing: running)
         #expect(updated.isRunning)
         #expect(try TimerEngine(database: db).running() == updated)
 
         draft.endedAt = local(2026, 10, 14, 15, 15)
-        try editor.save(draft, replacing: running.id)
+        try editor.save(draft, replacing: updated)
         #expect(try TimerEngine(database: db).running() == nil)
     }
 
@@ -394,6 +400,6 @@ private let runningSince10 = entry(12, 1, local(2026, 10, 14, 15, 20), nil)
         try editor.delete(id: id)
         #expect(try EntryRepository(database: db).find(id: id) == nil)
         try editor.delete(id: id)
-        #expect(throws: EntryEditError.missing) { try editor.save(EntryDraft(saved), replacing: id) }
+        #expect(throws: EntryEditError.missing) { try editor.save(EntryDraft(saved), replacing: saved) }
     }
 }

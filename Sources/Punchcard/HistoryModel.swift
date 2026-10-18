@@ -14,13 +14,16 @@ final class HistoryModel {
         var id: String { rawValue }
     }
 
-    /// An entry open in the editor sheet; `entryID` is nil for a new manual entry.
+    /// An entry open in the editor sheet; `original` is nil for a new manual entry.
     struct Editing: Identifiable {
         let id = UUID()
-        let entryID: Int64?
+        /// The entry as the editor opened it.
+        let original: Entry?
         var draft: EntryDraft
+
+        var entryID: Int64? { original?.id }
         /// The entry runs, so the editor offers to keep it running.
-        let wasRunning: Bool
+        var wasRunning: Bool { original?.isRunning ?? false }
     }
 
     let app: AppModel
@@ -81,16 +84,16 @@ final class HistoryModel {
     /// filled in; otherwise the user picks one.
     func addEntry() {
         let clientID = app.snapshot.isSingleClient ? app.snapshot.clients.first?.id : nil
-        editing = Editing(entryID: nil, draft: .manual(clientID: clientID, on: date, calendar: calendar), wasRunning: false)
+        editing = Editing(original: nil, draft: .manual(clientID: clientID, on: date, calendar: calendar))
     }
 
     func edit(_ row: DayViewModel.Row) {
-        editing = Editing(entryID: row.id, draft: EntryDraft(row.entry), wasRunning: row.isRunning)
+        editing = Editing(original: row.entry, draft: EntryDraft(row.entry))
     }
 
     func save(_ editing: Editing) throws {
         guard let database = app.database else { return }
-        try EntryEditor(database: database).save(editing.draft, replacing: editing.entryID)
+        try EntryEditor(database: database).save(editing.draft, replacing: editing.original)
         writeError = nil
         didWrite()
     }
