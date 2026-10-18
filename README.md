@@ -4,10 +4,10 @@ A macOS menu bar time tracker for contractors. Start and stop a clock per client
 per-day, per-week and per-month totals. Hours only, no money. Your data stays on your Mac in a
 SQLite file you own.
 
-> Early days. Version 0.1 starts and stops the clock and shows today, this week and this month
-> per client. The History and Settings windows are still empty; editing entries, managing
-> clients, the away prompt, CSV export, launch at login and a global shortcut arrive in the
-> next releases.
+> Early days. Punchcard starts and stops the clock, shows today, this week and this month
+> per client, and asks whether to keep the time when you come back from being away. The
+> History and Settings windows are still empty; editing entries, managing clients, CSV export,
+> launch at login and a global shortcut arrive in the next releases.
 
 ## Requirements
 
@@ -80,6 +80,17 @@ It prints `OK` when the zip is exactly what the release built.
     "INSERT INTO clients (name, created_at) VALUES ('Acme', unixepoch())"
   ```
 
+- **Away from the Mac.** If the clock runs while the Mac sits idle or asleep for 10 minutes
+  or more, Punchcard asks when you come back: "You were away for 23 minutes (since 2:15 PM)."
+  **Keep** leaves the time in, **Drop & Continue** ends the entry when you left and starts a
+  new one from when you came back, and **Drop & Stop** ends the entry when you left. Until the
+  Settings window arrives, change the threshold (in seconds, 60 to 7200) from Terminal:
+
+  ```sh
+  sqlite3 ~/Library/Application\ Support/Punchcard/punchcard.sqlite \
+    "INSERT OR REPLACE INTO settings (key, value) VALUES ('idle_threshold_seconds', '300')"
+  ```
+
 - **Quitting.** Quit from the dropdown. A running clock keeps running while the app is closed
   and is still running when you open it again.
 - **Opening at login.** Not automatic yet. Add Punchcard under
@@ -147,8 +158,8 @@ with the tag's version, and publishes a GitHub Release with the zip and its chec
 
 ## Roadmap
 
-- History window with entry editing, client management, the away prompt ("You were away
-  N min, keep or drop?"), CSV export, settings, launch at login and a global shortcut.
+- History window with entry editing, client management, CSV export, settings, launch at login
+  and a global shortcut.
 - A Tauri app for Windows and Linux, in this repository, sharing the same data format
   ([docs/schema.md](docs/schema.md)).
 
