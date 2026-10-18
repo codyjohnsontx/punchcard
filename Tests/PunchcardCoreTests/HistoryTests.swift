@@ -146,6 +146,19 @@ private let runningSince10 = entry(12, 1, local(2026, 10, 14, 15, 20), nil)
         #expect(vm.totalSeconds == 9600 + 6 * 3600)
     }
 
+    @Test func clientRowsShowWheneverMoreThanOneClientExists() {
+        let acmeOnly = WeekViewModel(
+            entries: [wednesdayMorning], clientNames: names, interval: week(now), now: now, calendar: chicago)
+        #expect(acmeOnly.rows.map(\.name) == ["Acme"])
+        #expect(acmeOnly.showsClientRows(singleClient: false))
+        #expect(!acmeOnly.showsClientRows(singleClient: true))
+
+        let both = WeekViewModel(
+            entries: [acrossMidnight, wednesdayMorning], clientNames: names, interval: week(now), now: now, calendar: chicago)
+        #expect(both.rows.count == 2)
+        #expect(both.showsClientRows(singleClient: true))
+    }
+
     @Test func emptyWeekHasColumnsButNoRows() {
         let vm = WeekViewModel(entries: [], clientNames: names, interval: week(now), now: now, calendar: chicago)
         #expect(vm.days.map(\.seconds) == [0, 0, 0, 0, 0, 0, 0])

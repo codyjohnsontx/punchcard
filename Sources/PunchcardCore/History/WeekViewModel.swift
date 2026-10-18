@@ -29,6 +29,12 @@ public struct WeekViewModel: Equatable, Sendable {
     public let rows: [Row]
     public var totalSeconds: Int { days.reduce(0) { $0 + $1.seconds } }
 
+    /// Whether the week shows a row per client above its totals: always, unless at most one
+    /// client is active (`TrackerSnapshot.isSingleClient`) and only one has time this week.
+    public func showsClientRows(singleClient: Bool) -> Bool {
+        !singleClient || rows.count > 1
+    }
+
     public init(entries: [Entry], clientNames: [Int64: String], interval: DateInterval, now: Date, calendar: Calendar) {
         self.interval = interval
         self.now = now

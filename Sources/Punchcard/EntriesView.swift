@@ -191,13 +191,14 @@ private struct DayView: View {
     }
 }
 
-/// One week: a column per day, a row per client when there is more than one, and the week's
-/// totals. Clicking a day shows it in the Day view.
+/// One week: a column per day, a row per client unless only one client exists, and the
+/// week's totals. Clicking a day shows it in the Day view.
 private struct WeekView: View {
     let history: HistoryModel
 
     var body: some View {
         if let week = history.week {
+            let showsClientRows = week.showsClientRows(singleClient: history.app.snapshot.isSingleClient)
             ScrollView {
                 Grid(alignment: .trailing, horizontalSpacing: 16, verticalSpacing: 8) {
                     GridRow {
@@ -208,7 +209,7 @@ private struct WeekView: View {
                         Text("Week").font(.headline)
                     }
                     Divider()
-                    if week.rows.count > 1 {
+                    if showsClientRows {
                         ForEach(week.rows) { row in
                             GridRow {
                                 Text(row.name).lineLimit(1).gridColumnAlignment(.leading)
@@ -221,7 +222,7 @@ private struct WeekView: View {
                         Divider()
                     }
                     GridRow {
-                        Text(week.rows.count > 1 ? "All" : "Total").gridColumnAlignment(.leading)
+                        Text(showsClientRows ? "All" : "Total").gridColumnAlignment(.leading)
                         ForEach(week.days) { day in
                             cell(day.seconds)
                         }
