@@ -1,14 +1,54 @@
+import PunchcardCore
 import SwiftUI
 
-/// The History window: past days and weeks, entry editing, clients and export arrive in
-/// later releases. This is the empty window the dropdown's History… item opens.
+/// The History window: a sidebar with Entries, Clients and Export. Entries shows past days
+/// and weeks and edits entries; Clients and Export arrive in later releases.
 struct HistoryView: View {
     static let windowID = "history"
 
+    enum Section: String, CaseIterable, Identifiable {
+        case entries = "Entries"
+        case clients = "Clients"
+        case export = "Export"
+
+        var id: String { rawValue }
+
+        var systemImage: String {
+            switch self {
+            case .entries: "calendar"
+            case .clients: "person.2"
+            case .export: "square.and.arrow.up"
+            }
+        }
+    }
+
+    let model: AppModel
+    @State private var section: Section? = .entries
+
     var body: some View {
-        ContentUnavailableView(
-            "History",
-            systemImage: "calendar",
-            description: Text("Past entries, editing, clients and export arrive in a later release."))
+        NavigationSplitView {
+            List(Section.allCases, selection: $section) { section in
+                Label(section.rawValue, systemImage: section.systemImage)
+            }
+            .navigationSplitViewColumnWidth(min: 140, ideal: 160, max: 220)
+        } detail: {
+            if let openError = model.openError {
+                ContentUnavailableView(
+                    "Database unavailable", systemImage: "exclamationmark.triangle", description: Text(openError))
+            } else {
+                switch section ?? .entries {
+                case .entries:
+                    EntriesView(app: model)
+                case .clients:
+                    ContentUnavailableView(
+                        "Clients", systemImage: Section.clients.systemImage,
+                        description: Text("Adding, renaming and archiving clients arrives in a later release."))
+                case .export:
+                    ContentUnavailableView(
+                        "Export", systemImage: Section.export.systemImage,
+                        description: Text("CSV export arrives in a later release."))
+                }
+            }
+        }
     }
 }

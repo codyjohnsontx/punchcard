@@ -5,9 +5,10 @@ per-day, per-week and per-month totals. Hours only, no money. Your data stays on
 SQLite file you own.
 
 > Early days. Punchcard starts and stops the clock, shows today, this week and this month
-> per client, and asks whether to keep the time when you come back from being away. The
-> History and Settings windows are still empty; editing entries, managing clients, CSV export,
-> launch at login and a global shortcut arrive in the next releases.
+> per client, asks whether to keep the time when you come back from being away, and has a
+> History window where you review past days and weeks and add, edit or delete entries. The
+> Clients and Export tabs and the Settings window are still empty; managing clients, CSV
+> export, launch at login and a global shortcut arrive in the next releases.
 
 ## Requirements
 
@@ -91,6 +92,16 @@ It prints `OK` when the zip is exactly what the release built.
     "INSERT OR REPLACE INTO settings (key, value) VALUES ('idle_threshold_seconds', '300')"
   ```
 
+- **History.** **History…** in the dropdown opens a window with past days and weeks. **Day**
+  lists that day's entries with client, start, end, duration and note; **Week** shows a column
+  per day with a row per client and the week's total, and clicking a day opens it. Use the
+  arrows, **Today** or the date picker to move around. An entry that crosses midnight is listed
+  on both days, with the part that falls on each day (`1:00 of 2:00`).
+- **Editing entries.** Double-click an entry, or right-click it, to change its client, start,
+  end or note; **Add Entry** records time by hand on the day shown, for example a meeting you
+  forgot to clock. An end before the start is refused. A yellow warning marks an entry that
+  overlaps another one, in the list and in the editor, but you can still save it. Delete asks
+  first.
 - **Quitting.** Quit from the dropdown. A running clock keeps running while the app is closed
   and is still running when you open it again.
 - **Opening at login.** Not automatic yet. Add Punchcard under
@@ -158,8 +169,7 @@ with the tag's version, and publishes a GitHub Release with the zip and its chec
 
 ## Roadmap
 
-- History window with entry editing, client management, CSV export, settings, launch at login
-  and a global shortcut.
+- Client management, CSV export, settings, launch at login and a global shortcut.
 - A Tauri app for Windows and Linux, in this repository, sharing the same data format
   ([docs/schema.md](docs/schema.md)).
 
