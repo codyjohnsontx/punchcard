@@ -58,6 +58,8 @@ public enum EntryEditError: Error, Equatable, LocalizedError {
     case anotherEntryRunning
     /// The entry being edited was deleted meanwhile.
     case missing
+    /// The draft keeps the entry running, but it was stopped meanwhile.
+    case stopped
 
     public var errorDescription: String? {
         switch self {
@@ -65,6 +67,7 @@ public enum EntryEditError: Error, Equatable, LocalizedError {
         case .endBeforeStart: "End can't be before start."
         case .anotherEntryRunning: "Another entry is already running."
         case .missing: "This entry no longer exists."
+        case .stopped: "This entry was stopped meanwhile."
         }
     }
 }
@@ -93,6 +96,7 @@ public struct EntryEditor: Sendable {
             return try database.queue.write { db in
                 if let id {
                     guard var entry = try Entry.fetchOne(db, key: id) else { throw EntryEditError.missing }
+                    if draft.isRunning && !entry.isRunning { throw EntryEditError.stopped }
                     entry.clientID = clientID
                     entry.startedAt = draft.startedAt
                     entry.endedAt = draft.endedAt

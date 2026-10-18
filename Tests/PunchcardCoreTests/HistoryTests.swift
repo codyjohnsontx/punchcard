@@ -335,17 +335,35 @@ private let runningSince10 = entry(12, 1, local(2026, 10, 14, 15, 20), nil)
         #expect(try EntryRepository(database: db).find(id: #require(saved.id)) == saved)
     }
 
-    @Test func editingAStoppedEntryIntoRunningFailsWhileAnotherRuns() throws {
+    @Test func addingARunningEntryFailsWhileAnotherRuns() throws {
         let db = try PunchcardCore.Database.inMemory()
         let defaultID = try #require(try ClientRepository(database: db).all().first?.id)
         let editor = EntryEditor(database: db, now: { now })
-        let stopped = try editor.save(EntryDraft(clientID: defaultID, startedAt: local(2026, 10, 13, 9), endedAt: local(2026, 10, 13, 10)))
         try TimerEngine(database: db).start(clientID: defaultID, at: local(2026, 10, 14, 15))
 
-        var draft = EntryDraft(stopped)
-        draft.endedAt = nil
-        #expect(throws: EntryEditError.anotherEntryRunning) { try editor.save(draft, replacing: stopped.id) }
+        let draft = EntryDraft(clientID: defaultID, startedAt: local(2026, 10, 13, 9), endedAt: nil)
+        #expect(throws: EntryEditError.anotherEntryRunning) { try editor.save(draft) }
         #expect(EntryEditError.anotherEntryRunning.localizedDescription == "Another entry is already running.")
+    }
+
+    @Test func savingARunningDraftAfterTheEntryWasStoppedFailsAndKeepsTheStop() throws {
+        let db = try PunchcardCore.Database.inMemory()
+        let defaultID = try #require(try ClientRepository(database: db).all().first?.id)
+        let clock = TestClock(local(2026, 10, 14, 12))
+        let engine = TimerEngine(database: db, now: { clock.now })
+        let running = try engine.start(clientID: defaultID)
+        let id = try #require(running.id)
+        var draft = EntryDraft(running)
+        draft.note = "Lunch call"
+        clock.advance(by: 1800)
+        try engine.stop()
+        let stopped = try #require(try EntryRepository(database: db).find(id: id))
+
+        let editor = EntryEditor(database: db, now: { clock.now })
+        #expect(throws: EntryEditError.stopped) { try editor.save(draft, replacing: id) }
+        #expect(EntryEditError.stopped.localizedDescription == "This entry was stopped meanwhile.")
+        #expect(try EntryRepository(database: db).find(id: id) == stopped)
+        #expect(try engine.running() == nil)
     }
 
     @Test func editingTheRunningEntryKeepsItRunning() throws {

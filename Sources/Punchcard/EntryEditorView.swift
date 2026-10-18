@@ -29,12 +29,12 @@ struct EntryEditorView: View {
                         Text(client.name).tag(client.id)
                     }
                 }
-                DatePicker("Start", selection: $editing.draft.startedAt, displayedComponents: [.date, .hourAndMinute])
+                DatePicker("Start", selection: wholeMinutes($editing.draft.startedAt), displayedComponents: [.date, .hourAndMinute])
                 if editing.wasRunning {
                     Toggle("Still running", isOn: isRunning)
                 }
                 if let end = Binding($editing.draft.endedAt) {
-                    DatePicker("End", selection: end, displayedComponents: [.date, .hourAndMinute])
+                    DatePicker("End", selection: wholeMinutes(end), displayedComponents: [.date, .hourAndMinute])
                 }
                 LabeledContent("Duration", value: duration)
                 TextField("Note", text: $editing.draft.note, prompt: Text("Optional"))
@@ -71,6 +71,13 @@ struct EntryEditorView: View {
             set: { running in
                 editing.draft.endedAt = running ? nil : max(Date(), editing.draft.startedAt)
             })
+    }
+
+    /// The pickers show hours and minutes only, so a time the user sets keeps no hidden seconds.
+    private func wholeMinutes(_ date: Binding<Date>) -> Binding<Date> {
+        Binding(
+            get: { date.wrappedValue },
+            set: { date.wrappedValue = Calendar.current.dateInterval(of: .minute, for: $0)?.start ?? $0 })
     }
 
     private var duration: String {

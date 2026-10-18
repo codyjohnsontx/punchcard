@@ -29,8 +29,11 @@ final class HistoryModel {
     var date = Date()
     private(set) var day: DayViewModel?
     private(set) var week: WeekViewModel?
-    /// The last failed read or delete.
-    private(set) var error: String?
+    /// The last failed delete, cleared by the next write that succeeds.
+    private var writeError: String?
+    /// The last failed read, cleared by the next read that succeeds.
+    private var readError: String?
+    var error: String? { writeError ?? readError }
     var editing: Editing?
     /// The row awaiting the delete confirmation.
     var deleting: DayViewModel.Row?
@@ -51,9 +54,9 @@ final class HistoryModel {
             case .day: day = try DayViewModel.load(from: database, containing: date, now: now, calendar: calendar)
             case .week: week = try WeekViewModel.load(from: database, containing: date, now: now, calendar: calendar)
             }
-            error = nil
+            readError = nil
         } catch {
-            self.error = error.localizedDescription
+            readError = error.localizedDescription
         }
     }
 
@@ -88,6 +91,7 @@ final class HistoryModel {
     func save(_ editing: Editing) throws {
         guard let database = app.database else { return }
         try EntryEditor(database: database).save(editing.draft, replacing: editing.entryID)
+        writeError = nil
         didWrite()
     }
 
@@ -95,8 +99,9 @@ final class HistoryModel {
         guard let database = app.database else { return }
         do {
             try EntryEditor(database: database).delete(id: row.id)
+            writeError = nil
         } catch {
-            self.error = error.localizedDescription
+            writeError = error.localizedDescription
         }
         didWrite()
     }
