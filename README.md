@@ -115,8 +115,8 @@ make run     # swift run Punchcard, no app bundle
 make zip     # dist/Punchcard-<version>-macos.zip and its .sha256
 ```
 
-The bundle version comes from the [`VERSION`](VERSION) file. Set `VERSION=x.y.z` for
-`make app` or `make zip` to override it.
+Local builds are versioned `0.0.0-dev`. Set `VERSION=x.y.z` to stamp a version, for
+example `VERSION=0.1.0 make app`.
 
 With only the Command Line Tools, plain `swift test` builds but runs no tests, because
 SwiftPM does not put Swift Testing on the framework search path; use `make test`.
@@ -126,16 +126,15 @@ Xcode can open `Package.swift` directly for previews and debugging.
 
 ### Releasing
 
-Set `VERSION` to the new version on `main`, then push a matching tag:
+Push a `v` tag; the release takes its version from the tag:
 
 ```sh
 git tag v0.1.0
 git push origin v0.1.0
 ```
 
-The [release workflow](.github/workflows/release.yml) checks that the tag matches `VERSION`,
-runs the tests, builds the universal app, and publishes a GitHub Release with the zip and its
-checksum.
+The [release workflow](.github/workflows/release.yml) runs the tests, builds the universal app
+with the tag's version, and publishes a GitHub Release with the zip and its checksum.
 
 ## Layout
 

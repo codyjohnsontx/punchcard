@@ -13,15 +13,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: swift --version
-      - name: Check the tag matches VERSION
-        run: |
-          version="$(tr -d '[:space:]' < VERSION)"
-          if [ "$GITHUB_REF_NAME" != "v$version" ]; then
-            echo "tag $GITHUB_REF_NAME does not match VERSION $version" >&2
-            exit 1
-          fi
       - run: make test
-      - run: scripts/build-app.sh --zip
+      - run: VERSION="${GITHUB_REF_NAME#v}" scripts/build-app.sh --zip
       - run: codesign --verify --verbose dist/Punchcard.app
       - run: lipo dist/Punchcard.app/Contents/MacOS/Punchcard -verify_arch arm64 x86_64
       - run: cd dist && shasum -a 256 -c Punchcard-*-macos.zip.sha256
