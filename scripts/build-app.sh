@@ -36,9 +36,12 @@ lipo -create "${bin_dirs[0]}/$name" "${bin_dirs[1]}/$name" -output "$app/Content
 shopt -s nullglob
 bundles=("${bin_dirs[0]}"/*.bundle)
 shopt -u nullglob
+# Some checkouts ship read-only files (GRDB's PrivacyInfo.xcprivacy); keep them
+# owner-writable so `xattr -dr com.apple.quarantine` on the installed app succeeds.
 for bundle in ${bundles[@]+"${bundles[@]}"}; do
   cp -R "$bundle" "$app/Contents/Resources/"
 done
+chmod -R u+w "$app/Contents/Resources"
 
 scripts/make-icon.sh Packaging/icon-1024.png "$app/Contents/Resources/AppIcon.icns"
 
