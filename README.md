@@ -4,6 +4,8 @@ A macOS menu bar time tracker for contractors. Start and stop a clock per client
 per-day, per-week and per-month totals. Hours only, no money. Your data stays on your Mac in a
 SQLite file you own.
 
+![The Punchcard menu bar dropdown, not running, with a Start button and today, this week and this month totals](docs/dropdown.png)
+
 > Early days. Punchcard starts and stops the clock, shows today, this week and this month
 > per client, asks whether to keep the time when you come back from being away, and has a
 > History window where you review past days and weeks and add, edit or delete entries. The
