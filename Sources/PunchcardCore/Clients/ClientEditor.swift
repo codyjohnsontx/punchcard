@@ -36,14 +36,15 @@ public struct ClientEditor: Sendable {
     }
 
     /// Archives a client, hiding it from the dropdown and the pickers while its entries stay in
-    /// history. Refused while the client's clock runs; archiving an archived client changes
-    /// nothing.
+    /// history. Refused for the only active client and while the client's clock runs; archiving
+    /// an archived client changes nothing.
     @discardableResult
     public func archive(id: Int64) throws -> Client {
         let now = TimerEngine.wholeSeconds(now())
         return try database.queue.write { db in
             var client = try Self.fetch(id, db)
             guard client.archivedAt == nil else { return client }
+            if try Self.isOnlyActive(client, db) { throw ClientEditError.archivingLastActive }
             if try EntryRepository.running(db)?.clientID == id { throw ClientEditError.running }
             client.archivedAt = now
             try client.update(db)
@@ -63,11 +64,14 @@ public struct ClientEditor: Sendable {
         }
     }
 
-    /// Deletes a client that has no entries. One with entries is refused with the hint to
-    /// archive it instead; deleting a client that is already gone is not an error.
+    /// Deletes a client that has no entries. The only active client is refused, and one with
+    /// entries is refused with the hint to archive it instead; deleting a client that is already
+    /// gone is not an error.
     public func delete(id: Int64) throws {
         do {
             try database.queue.write { db in
+                guard let client = try Client.fetchOne(db, key: id) else { return }
+                if try Self.isOnlyActive(client, db) { throw ClientEditError.deletingLastActive }
                 let count = try Int.fetchOne(
                     db, sql: "SELECT count(*) FROM entries WHERE client_id = ?", arguments: [id]) ?? 0
                 guard count == 0 else { throw ClientEditError.hasEntries }
@@ -82,6 +86,11 @@ public struct ClientEditor: Sendable {
     private static func fetch(_ id: Int64, _ db: GRDB.Database) throws -> Client {
         guard let client = try Client.fetchOne(db, key: id) else { throw ClientEditError.missing }
         return client
+    }
+
+    private static func isOnlyActive(_ client: Client, _ db: GRDB.Database) throws -> Bool {
+        guard client.archivedAt == nil else { return false }
+        return try Client.filter(sql: "archived_at IS NULL").fetchCount(db) == 1
     }
 
     private func mappingNameErrors<T>(_ body: () throws -> T) throws -> T {
@@ -104,6 +113,10 @@ public enum ClientEditError: Error, Equatable, LocalizedError {
     case hasEntries
     /// Archiving the client whose clock runs.
     case running
+    /// Archiving the only active client, which would leave the dropdown without one.
+    case archivingLastActive
+    /// Deleting the only active client, which would leave the dropdown without one.
+    case deletingLastActive
 
     public var errorDescription: String? {
         switch self {
@@ -112,6 +125,8 @@ public enum ClientEditError: Error, Equatable, LocalizedError {
         case .missing: "This client no longer exists."
         case .hasEntries: "This client has entries and can't be deleted. Archive it instead."
         case .running: "This client's clock is running. Stop it before archiving."
+        case .archivingLastActive: "Add another client before archiving this one."
+        case .deletingLastActive: "Add another client before deleting this one."
         }
     }
 }

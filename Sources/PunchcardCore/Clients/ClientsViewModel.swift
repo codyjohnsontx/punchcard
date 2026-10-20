@@ -10,24 +10,29 @@ public struct ClientsViewModel: Equatable, Sendable {
         public let entryCount: Int
         /// The client's clock runs, so it cannot be archived.
         public let isRunning: Bool
+        /// The client is the only active one, so it can be neither archived nor deleted.
+        public let isOnlyActive: Bool
 
         public var name: String { client.name }
         public var isArchived: Bool { client.archivedAt != nil }
         /// Only a client without entries can be deleted; one with entries is archived instead.
-        public var canDelete: Bool { entryCount == 0 }
-        public var canArchive: Bool { !isArchived && !isRunning }
-        /// The client has entries and is still active, so archiving is what the tab suggests in
-        /// place of deleting.
-        public var suggestsArchive: Bool { !canDelete && !isArchived }
+        public var canDelete: Bool { entryCount == 0 && !isOnlyActive }
+        public var canArchive: Bool { !isArchived && !isRunning && !isOnlyActive }
+        /// The client has entries and can still be archived once its clock stops, so archiving
+        /// is what the tab suggests in place of deleting.
+        public var suggestsArchive: Bool { entryCount > 0 && !isArchived && !isOnlyActive }
     }
 
     /// Active clients by name, then archived clients by name.
     public let rows: [Row]
 
     public init(clients: [Client], entryCounts: [Int64: Int], runningClientID: Int64?) {
+        let activeCount = clients.filter { $0.id != nil && $0.archivedAt == nil }.count
         let rows = clients.compactMap { client in
             client.id.map { id in
-                Row(id: id, client: client, entryCount: entryCounts[id] ?? 0, isRunning: runningClientID == id)
+                Row(
+                    id: id, client: client, entryCount: entryCounts[id] ?? 0, isRunning: runningClientID == id,
+                    isOnlyActive: client.archivedAt == nil && activeCount == 1)
             }
         }
         let byName = { (a: Row, b: Row) in a.name.localizedStandardCompare(b.name) == .orderedAscending }

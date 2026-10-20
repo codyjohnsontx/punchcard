@@ -79,8 +79,9 @@ It prints `OK` when the zip is exactly what the release built.
   in the History window's **Clients** tab. Archiving hides a client from the dropdown and the
   client pickers while its entries stay in history and totals; unarchive it to bring it back.
   A client with entries can't be deleted, only archived, and a client can't be archived while
-  its clock runs. With all other clients archived, the dropdown is back to its single Start
-  button.
+  its clock runs. The only active client can't be archived or deleted, so the dropdown always
+  has a clock; add another client first. With all other clients archived, the dropdown is back
+  to its single Start button.
 
 - **Away from the Mac.** If the clock runs while the Mac sits idle or asleep for 10 minutes
   or more, Punchcard asks when you come back: "You were away for 23 minutes (since 2:15 PM)."

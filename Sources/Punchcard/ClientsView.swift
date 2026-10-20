@@ -127,11 +127,18 @@ struct ClientsView: View {
         } else {
             Button("Archive") { model.archive(row) }
                 .disabled(!row.canArchive)
-                .help(row.isRunning ? "Stop the clock before archiving this client" : "Hide this client from the dropdown; its time stays in history")
+                .help(
+                    row.isOnlyActive ? "Add another client before archiving this one."
+                        : row.isRunning ? "Stop the clock before archiving this client"
+                        : "Hide this client from the dropdown; its time stays in history")
         }
         Button("Delete…", role: .destructive) { model.deleting = row }
             .disabled(!row.canDelete)
-            .help(row.canDelete ? "Remove this client" : row.suggestsArchive ? "This client has entries and can't be deleted. Archive it instead." : "This client has entries and can't be deleted.")
+            .help(
+                row.canDelete ? "Remove this client"
+                    : row.isOnlyActive ? "Add another client before deleting this one."
+                    : row.suggestsArchive ? "This client has entries and can't be deleted. Archive it instead."
+                    : "This client has entries and can't be deleted.")
     }
 
     /// The actions for the selected client, with the reason when one is unavailable.
@@ -139,7 +146,9 @@ struct ClientsView: View {
         HStack(spacing: 8) {
             if let row {
                 rowActions(row)
-                if row.isRunning {
+                if row.isOnlyActive {
+                    hint("The only active client. Add another before archiving or deleting it.")
+                } else if row.isRunning {
                     hint("The clock is running. Stop it before archiving.")
                 } else if row.suggestsArchive {
                     hint("Has entries. Archive it instead of deleting.")

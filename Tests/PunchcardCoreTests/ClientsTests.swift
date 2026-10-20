@@ -83,6 +83,37 @@ private func editor(_ db: PunchcardCore.Database, now: Date = t0 + 100) -> Clien
         try editor(db).delete(id: acme.id!)
     }
 
+    @Test func archivingTheOnlyActiveClientIsRefused() throws {
+        let db = try PunchcardCore.Database.inMemory()
+        let only = try #require(try ClientRepository(database: db).all().first)
+
+        #expect(throws: ClientEditError.archivingLastActive) { try editor(db).archive(id: only.id!) }
+        #expect(try ClientRepository(database: db).all() == [only])
+        #expect(ClientEditError.archivingLastActive.errorDescription == "Add another client before archiving this one.")
+
+        // With a second client either can be archived, and then the other is the only one left.
+        let acme = try editor(db).add(name: "Acme")
+        try editor(db).archive(id: only.id!)
+        #expect(throws: ClientEditError.archivingLastActive) { try editor(db).archive(id: acme.id!) }
+        #expect(try ClientRepository(database: db).all().map(\.name) == ["Acme"])
+    }
+
+    @Test func deletingTheOnlyActiveClientIsRefused() throws {
+        let db = try PunchcardCore.Database.inMemory()
+        let only = try #require(try ClientRepository(database: db).all().first)
+
+        #expect(throws: ClientEditError.deletingLastActive) { try editor(db).delete(id: only.id!) }
+        #expect(try ClientRepository(database: db).all() == [only])
+        #expect(ClientEditError.deletingLastActive.errorDescription == "Add another client before deleting this one.")
+
+        // An archived client can still be deleted while one active client remains.
+        let acme = try editor(db).add(name: "Acme")
+        try editor(db).archive(id: acme.id!)
+        try editor(db).delete(id: acme.id!)
+        #expect(try ClientRepository(database: db).find(id: acme.id!) == nil)
+        #expect(throws: ClientEditError.deletingLastActive) { try editor(db).delete(id: only.id!) }
+    }
+
     @Test func archivingTheRunningClientIsRefusedWhileItRuns() throws {
         let db = try PunchcardCore.Database.inMemory()
         let acme = try editor(db).add(name: "Acme")
@@ -160,6 +191,7 @@ private func editor(_ db: PunchcardCore.Database, now: Date = t0 + 100) -> Clien
         #expect(vm.rows.map(\.canDelete) == [false, true, false, true])
         #expect(vm.rows.map(\.canArchive) == [true, true, false, false])
         #expect(vm.rows.map(\.suggestsArchive) == [true, false, true, false])
+        #expect(vm.rows.map(\.isOnlyActive) == [false, false, false, false])
         #expect(vm.activeCount == 3)
         #expect(vm.row(id: globex.id!)?.client.archivedAt == t0 + 100)
         #expect(vm.row(id: 999) == nil)
@@ -169,12 +201,26 @@ private func editor(_ db: PunchcardCore.Database, now: Date = t0 + 100) -> Clien
         let clients = [
             Client(id: 1, name: "Acme", createdAt: t0),
             Client(id: 2, name: "Globex", archivedAt: t0, createdAt: t0),
+            Client(id: 3, name: "Initech", createdAt: t0),
             Client(name: "unsaved", createdAt: t0),
         ]
         let vm = ClientsViewModel(clients: clients, entryCounts: [2: 4], runningClientID: 1)
-        #expect(vm.rows.map(\.id) == [1, 2])
+        #expect(vm.rows.map(\.id) == [1, 3, 2])
         #expect(vm.rows[0].isRunning && !vm.rows[0].canArchive && vm.rows[0].canDelete)
-        #expect(vm.rows[1].entryCount == 4 && !vm.rows[1].canDelete && !vm.rows[1].suggestsArchive)
-        #expect(vm.activeCount == 1)
+        #expect(vm.rows[2].entryCount == 4 && !vm.rows[2].canDelete && !vm.rows[2].suggestsArchive)
+        #expect(vm.activeCount == 2)
+    }
+
+    @Test func theOnlyActiveClientCanBeNeitherArchivedNorDeleted() {
+        let clients = [
+            Client(id: 1, name: "Acme", createdAt: t0),
+            Client(id: 2, name: "Globex", archivedAt: t0, createdAt: t0),
+            Client(id: 3, name: "Initech", archivedAt: t0, createdAt: t0),
+        ]
+        let vm = ClientsViewModel(clients: clients, entryCounts: [1: 2, 3: 1], runningClientID: nil)
+        #expect(vm.rows.map(\.isOnlyActive) == [true, false, false])
+        #expect(vm.rows.map(\.canArchive) == [false, false, false])
+        #expect(vm.rows.map(\.canDelete) == [false, true, false])
+        #expect(vm.rows.map(\.suggestsArchive) == [false, false, false])
     }
 }
