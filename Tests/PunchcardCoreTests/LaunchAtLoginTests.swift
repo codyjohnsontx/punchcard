@@ -93,6 +93,34 @@ private struct RegisterFailed: Error {}
         #expect(item.registerCount == 2)
     }
 
+    @Test func turningItOffInSettingsAfterAFailedFirstLaunchStaysOff() throws {
+        let store = SettingsStore(database: try .inMemory())
+        let item = FakeLoginItem(status: .notRegistered)
+        item.registerError = RegisterFailed()
+        #expect(throws: RegisterFailed.self) { try LaunchAtLogin.onboardIfNeeded(store: store, loginItem: item, now: t0) }
+
+        // The user turns it on, then off, in Settings.
+        item.registerError = nil
+        try LaunchAtLogin.setEnabled(true, store: store, loginItem: item, now: t0.addingTimeInterval(60))
+        #expect(item.status == .enabled)
+        try LaunchAtLogin.setEnabled(false, store: store, loginItem: item, now: t0.addingTimeInterval(120))
+        #expect(item.status == .notRegistered)
+        #expect(try store.onboardedAt == t0.addingTimeInterval(60))
+
+        // The next launch leaves it off.
+        #expect(try LaunchAtLogin.onboardIfNeeded(store: store, loginItem: item, now: t0.addingTimeInterval(180)) == .alreadyOnboarded)
+        #expect(item.registerCount == 2)
+        #expect(item.status == .notRegistered)
+    }
+
+    @Test func aFailedToggleRecordsNothing() throws {
+        let store = SettingsStore(database: try .inMemory())
+        let item = FakeLoginItem(status: .notRegistered)
+        item.registerError = RegisterFailed()
+        #expect(throws: RegisterFailed.self) { try LaunchAtLogin.setEnabled(true, store: store, loginItem: item, now: t0) }
+        #expect(try store.onboardedAt == nil)
+    }
+
     @Test func settingsRowShowsEachStatus() {
         let enabled = LaunchAtLoginViewModel(status: .enabled, isBundled: true)
         #expect(enabled.isOn && enabled.isToggleEnabled && enabled.message == nil && !enabled.showsOpenSystemSettings)

@@ -75,7 +75,7 @@ final class SettingsModel {
         get { launchAtLogin.isOn }
         set {
             do {
-                if newValue { try loginItem.register() } else { try loginItem.unregister() }
+                try LaunchAtLogin.setEnabled(newValue, store: store, loginItem: loginItem)
                 loginItemError = nil
             } catch {
                 loginItemError = error.localizedDescription

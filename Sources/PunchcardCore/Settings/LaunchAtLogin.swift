@@ -48,6 +48,18 @@ public enum LaunchAtLogin {
         try store.setOnboardedAt(now)
         return .registered
     }
+
+    /// Turns launch at login on or off from Settings. A change that succeeds is the user's own
+    /// choice, so it also records `onboarded_at` when a failed first launch left it unset;
+    /// otherwise the next launch would register again over a user who turned it off. `store`
+    /// is nil when the database could not be opened.
+    @MainActor
+    public static func setEnabled(_ enabled: Bool, store: SettingsStore?, loginItem: LoginItem, now: Date = Date()) throws {
+        if enabled { try loginItem.register() } else { try loginItem.unregister() }
+        if let store, try store.onboardedAt == nil {
+            try store.setOnboardedAt(now)
+        }
+    }
 }
 
 /// What the Settings window's launch at login row shows for a login item status.
