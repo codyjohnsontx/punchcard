@@ -9,8 +9,9 @@ SQLite file you own.
 > Early days. Punchcard starts and stops the clock, shows today, this week and this month
 > per client, asks whether to keep the time when you come back from being away, and has a
 > History window where you review past days and weeks, add, edit or delete entries, and
-> manage clients, and export CSV files. The Settings window is still empty; settings, launch
-> at login and a global shortcut arrive in the next releases.
+> manage clients and export CSV files, and a Settings window for the menu bar style, the week
+> start and the away threshold. Launch at login and a global shortcut arrive in the next
+> releases.
 
 ## Requirements
 
@@ -69,9 +70,10 @@ It prints `OK` when the zip is exactly what the release built.
 
 - **Start and stop.** Click the menu bar item. With one client, the dropdown has a single
   Start or Stop button. While the clock runs, the menu bar shows the running time, such as
-  `● 1:42`.
-- **Totals.** The dropdown shows today, this week and this month. Weeks start on Monday.
-  Durations read as hours and minutes, so `160:15` is 160 hours 15 minutes.
+  `● 1:42`, unless Settings has it show only the icon.
+- **Totals.** The dropdown shows today, this week and this month. Weeks start on Monday
+  unless you change it in Settings. Durations read as hours and minutes, so `160:15` is 160
+  hours 15 minutes.
 - **Clients.** Punchcard starts with one client named `Default`. Once there are two or more,
   each client gets its own Start button and totals row, and the menu bar adds the running
   client's name. Only one clock runs at a time: starting another client stops the running one
@@ -86,13 +88,8 @@ It prints `OK` when the zip is exactly what the release built.
 - **Away from the Mac.** If the clock runs while the Mac sits idle or asleep for 10 minutes
   or more, Punchcard asks when you come back: "You were away for 23 minutes (since 2:15 PM)."
   **Keep** leaves the time in, **Drop & Continue** ends the entry when you left and starts a
-  new one from when you came back, and **Drop & Stop** ends the entry when you left. Until the
-  Settings window arrives, change the threshold (in seconds, 60 to 7200) from Terminal:
-
-  ```sh
-  sqlite3 ~/Library/Application\ Support/Punchcard/punchcard.sqlite \
-    "INSERT OR REPLACE INTO settings (key, value) VALUES ('idle_threshold_seconds', '300')"
-  ```
+  new one from when you came back, and **Drop & Stop** ends the entry when you left. Change
+  the 10 minutes in Settings.
 
 - **History.** **History…** in the dropdown opens a window with past days and weeks. **Day**
   lists that day's entries with client, start, end, duration and note; **Week** shows a column
@@ -107,6 +104,12 @@ It prints `OK` when the zip is exactly what the release built.
 - **Export.** The **Export** tab of the History window saves a CSV file of this week, this
   month, last month, all time or a custom range of days, as either a list of entries or a
   daily summary. See [CSV files](#csv-files) for the columns.
+- **Settings.** **Settings…** in the dropdown opens the Settings window. **General** chooses
+  whether the menu bar shows the running time or only the icon, which day the week starts on
+  (Monday unless you change it; the week total follows at once) and how many minutes away, 1
+  to 120, bring up the keep-or-drop question. Every change applies as soon as you make it.
+  **Data** shows where the database is, with a button to reveal it in Finder, and the app
+  version.
 - **Quitting.** Quit from the dropdown. A running clock keeps running while the app is closed
   and is still running when you open it again.
 - **Opening at login.** Not automatic yet. Add Punchcard under
@@ -206,7 +209,7 @@ with the tag's version, and publishes a GitHub Release with the zip and its chec
 
 ## Roadmap
 
-- Settings, launch at login and a global shortcut.
+- Launch at login and a global shortcut.
 - A Tauri app for Windows and Linux, in this repository, sharing the same data format
   ([docs/schema.md](docs/schema.md)).
 
