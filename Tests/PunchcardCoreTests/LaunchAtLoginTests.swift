@@ -4,12 +4,14 @@ import Testing
 
 @MainActor
 private final class FakeLoginItem: LoginItem {
+    let isBundled: Bool
     var status: LoginItemStatus
     var registerCount = 0
     var registerError: Error?
 
-    init(status: LoginItemStatus) {
+    init(status: LoginItemStatus, isBundled: Bool = true) {
         self.status = status
+        self.isBundled = isBundled
     }
 
     func register() throws {
@@ -49,16 +51,33 @@ private struct RegisterFailed: Error {}
 
     @Test func outsideABundleNothingIsRegisteredOrRecorded() throws {
         let store = SettingsStore(database: try .inMemory())
-        let item = FakeLoginItem(status: .notFound)
+        let item = FakeLoginItem(status: .notFound, isBundled: false)
 
         #expect(try LaunchAtLogin.onboardIfNeeded(store: store, loginItem: item, now: t0) == .notBundled)
         #expect(item.registerCount == 0)
         #expect(try store.onboardedAt == nil)
 
+        let row = LaunchAtLoginViewModel(status: item.status, isBundled: item.isBundled)
+        #expect(!row.isOn && !row.isToggleEnabled && !row.showsOpenSystemSettings)
+        #expect(row.message == LaunchAtLoginViewModel.notBundledText)
+
         // The bundled app, sharing the same database, still onboards.
         let bundled = FakeLoginItem(status: .notRegistered)
         #expect(try LaunchAtLogin.onboardIfNeeded(store: store, loginItem: bundled, now: t0) == .registered)
         #expect(bundled.registerCount == 1)
+    }
+
+    @Test func aBundledAppTheOSCannotFindStillRegistersAndCanBeToggled() throws {
+        let store = SettingsStore(database: try .inMemory())
+        let item = FakeLoginItem(status: .notFound)
+
+        let row = LaunchAtLoginViewModel(status: item.status, isBundled: item.isBundled)
+        #expect(!row.isOn && row.isToggleEnabled && row.message == nil && !row.showsOpenSystemSettings)
+
+        #expect(try LaunchAtLogin.onboardIfNeeded(store: store, loginItem: item, now: t0) == .registered)
+        #expect(item.registerCount == 1)
+        #expect(item.status == .enabled)
+        #expect(try store.onboardedAt == t0)
     }
 
     @Test func aFailedRegistrationIsRetriedNextLaunch() throws {
@@ -75,18 +94,23 @@ private struct RegisterFailed: Error {}
     }
 
     @Test func settingsRowShowsEachStatus() {
-        let enabled = LaunchAtLoginViewModel(status: .enabled)
+        let enabled = LaunchAtLoginViewModel(status: .enabled, isBundled: true)
         #expect(enabled.isOn && enabled.isToggleEnabled && enabled.message == nil && !enabled.showsOpenSystemSettings)
 
-        let off = LaunchAtLoginViewModel(status: .notRegistered)
+        let off = LaunchAtLoginViewModel(status: .notRegistered, isBundled: true)
         #expect(!off.isOn && off.isToggleEnabled && off.message == nil && !off.showsOpenSystemSettings)
 
-        let approval = LaunchAtLoginViewModel(status: .requiresApproval)
+        let approval = LaunchAtLoginViewModel(status: .requiresApproval, isBundled: true)
         #expect(!approval.isOn && approval.isToggleEnabled && approval.showsOpenSystemSettings)
         #expect(approval.message == "Approve Punchcard in System Settings > General > Login Items")
 
-        let notFound = LaunchAtLoginViewModel(status: .notFound)
-        #expect(!notFound.isOn && !notFound.isToggleEnabled && !notFound.showsOpenSystemSettings)
-        #expect(notFound.message == LaunchAtLoginViewModel.notBundledText)
+        let notFound = LaunchAtLoginViewModel(status: .notFound, isBundled: true)
+        #expect(!notFound.isOn && notFound.isToggleEnabled && notFound.message == nil && !notFound.showsOpenSystemSettings)
+
+        for status in [LoginItemStatus.enabled, .notRegistered, .requiresApproval, .notFound] {
+            let notBundled = LaunchAtLoginViewModel(status: status, isBundled: false)
+            #expect(!notBundled.isOn && !notBundled.isToggleEnabled && !notBundled.showsOpenSystemSettings)
+            #expect(notBundled.message == LaunchAtLoginViewModel.notBundledText)
+        }
     }
 }

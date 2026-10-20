@@ -69,7 +69,7 @@ final class SettingsModel {
         loginItemStatus = loginItem.status
     }
 
-    var launchAtLogin: LaunchAtLoginViewModel { LaunchAtLoginViewModel(status: loginItemStatus) }
+    var launchAtLogin: LaunchAtLoginViewModel { LaunchAtLoginViewModel(status: loginItemStatus, isBundled: loginItem.isBundled) }
 
     var launchesAtLogin: Bool {
         get { launchAtLogin.isOn }

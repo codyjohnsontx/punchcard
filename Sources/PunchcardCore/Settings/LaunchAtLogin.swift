@@ -9,13 +9,16 @@ public enum LoginItemStatus: Equatable, Sendable {
     case notRegistered
     /// Registered, but the user turned it off in System Settings > General > Login Items.
     case requiresApproval
-    /// The OS cannot find the app, as under `swift run`, where there is no app bundle.
+    /// The OS cannot find the login item: under `swift run`, where there is no app bundle, or
+    /// for a bundled app that was moved or renamed, or removed from Login Items.
     case notFound
 }
 
 /// The OS login item for the app: `SMAppService.mainApp` in the app, a fake in tests.
 @MainActor
 public protocol LoginItem {
+    /// Whether the app runs from an app bundle; under `swift run` it does not.
+    var isBundled: Bool { get }
     var status: LoginItemStatus { get }
     func register() throws
     func unregister() throws
@@ -40,7 +43,7 @@ public enum LaunchAtLogin {
     @MainActor @discardableResult
     public static func onboardIfNeeded(store: SettingsStore, loginItem: LoginItem, now: Date = Date()) throws -> FirstLaunchOutcome {
         guard try store.onboardedAt == nil else { return .alreadyOnboarded }
-        guard loginItem.status != .notFound else { return .notBundled }
+        guard loginItem.isBundled else { return .notBundled }
         try loginItem.register()
         try store.setOnboardedAt(now)
         return .registered
@@ -61,16 +64,18 @@ public struct LaunchAtLoginViewModel: Equatable, Sendable {
     /// Whether to offer the button that opens System Settings > General > Login Items.
     public let showsOpenSystemSettings: Bool
 
-    public init(status: LoginItemStatus) {
+    public init(status: LoginItemStatus, isBundled: Bool) {
+        guard isBundled else {
+            (isOn, isToggleEnabled, message, showsOpenSystemSettings) = (false, false, Self.notBundledText, false)
+            return
+        }
         switch status {
         case .enabled:
             (isOn, isToggleEnabled, message, showsOpenSystemSettings) = (true, true, nil, false)
-        case .notRegistered:
+        case .notRegistered, .notFound:
             (isOn, isToggleEnabled, message, showsOpenSystemSettings) = (false, true, nil, false)
         case .requiresApproval:
             (isOn, isToggleEnabled, message, showsOpenSystemSettings) = (false, true, Self.approvalText, true)
-        case .notFound:
-            (isOn, isToggleEnabled, message, showsOpenSystemSettings) = (false, false, Self.notBundledText, false)
         }
     }
 }

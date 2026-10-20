@@ -1,11 +1,14 @@
+import Foundation
 import PunchcardCore
 import ServiceManagement
 
 /// The app's login item through `SMAppService.mainApp`. Under `swift run` there is no app
-/// bundle, and the OS reports `.notFound`.
+/// bundle, so `isBundled` is false.
 @MainActor
 struct SystemLoginItem: LoginItem {
     private var service: SMAppService { .mainApp }
+
+    var isBundled: Bool { Bundle.main.bundleURL.pathExtension == "app" }
 
     var status: LoginItemStatus {
         switch service.status {
