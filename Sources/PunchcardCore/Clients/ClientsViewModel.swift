@@ -16,6 +16,9 @@ public struct ClientsViewModel: Equatable, Sendable {
         /// Only a client without entries can be deleted; one with entries is archived instead.
         public var canDelete: Bool { entryCount == 0 }
         public var canArchive: Bool { !isArchived && !isRunning }
+        /// The client has entries and is still active, so archiving is what the tab suggests in
+        /// place of deleting.
+        public var suggestsArchive: Bool { !canDelete && !isArchived }
     }
 
     /// Active clients by name, then archived clients by name.

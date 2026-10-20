@@ -159,6 +159,7 @@ private func editor(_ db: PunchcardCore.Database, now: Date = t0 + 100) -> Clien
         #expect(vm.rows.map(\.isRunning) == [false, false, true, false])
         #expect(vm.rows.map(\.canDelete) == [false, true, false, true])
         #expect(vm.rows.map(\.canArchive) == [true, true, false, false])
+        #expect(vm.rows.map(\.suggestsArchive) == [true, false, true, false])
         #expect(vm.activeCount == 3)
         #expect(vm.row(id: globex.id!)?.client.archivedAt == t0 + 100)
         #expect(vm.row(id: 999) == nil)
@@ -173,7 +174,7 @@ private func editor(_ db: PunchcardCore.Database, now: Date = t0 + 100) -> Clien
         let vm = ClientsViewModel(clients: clients, entryCounts: [2: 4], runningClientID: 1)
         #expect(vm.rows.map(\.id) == [1, 2])
         #expect(vm.rows[0].isRunning && !vm.rows[0].canArchive && vm.rows[0].canDelete)
-        #expect(vm.rows[1].entryCount == 4 && !vm.rows[1].canDelete)
+        #expect(vm.rows[1].entryCount == 4 && !vm.rows[1].canDelete && !vm.rows[1].suggestsArchive)
         #expect(vm.activeCount == 1)
     }
 }

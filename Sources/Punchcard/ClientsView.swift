@@ -98,7 +98,7 @@ struct ClientsView: View {
             }
             .width(min: 60, ideal: 80)
             TableColumn("") { row in
-                if !row.canDelete {
+                if row.suggestsArchive {
                     Text("Archive instead")
                         .foregroundStyle(.secondary)
                         .help("This client has entries and can't be deleted. Archive it instead.")
@@ -131,7 +131,7 @@ struct ClientsView: View {
         }
         Button("Delete…", role: .destructive) { model.deleting = row }
             .disabled(!row.canDelete)
-            .help(row.canDelete ? "Remove this client" : "This client has entries and can't be deleted. Archive it instead.")
+            .help(row.canDelete ? "Remove this client" : row.suggestsArchive ? "This client has entries and can't be deleted. Archive it instead." : "This client has entries and can't be deleted.")
     }
 
     /// The actions for the selected client, with the reason when one is unavailable.
@@ -141,8 +141,10 @@ struct ClientsView: View {
                 rowActions(row)
                 if row.isRunning {
                     hint("The clock is running. Stop it before archiving.")
-                } else if !row.canDelete {
+                } else if row.suggestsArchive {
                     hint("Has entries. Archive it instead of deleting.")
+                } else if !row.canDelete {
+                    hint("Has entries, so it can't be deleted.")
                 }
             } else {
                 Text("Select a client to rename, archive or delete it.")
