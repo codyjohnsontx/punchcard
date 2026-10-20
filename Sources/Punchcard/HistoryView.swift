@@ -2,7 +2,8 @@ import PunchcardCore
 import SwiftUI
 
 /// The History window: a sidebar with Entries, Clients and Export. Entries shows past days
-/// and weeks and edits entries; Clients and Export arrive in later releases.
+/// and weeks and edits entries; Clients adds, renames, archives and deletes clients; Export
+/// arrives in a later release.
 struct HistoryView: View {
     static let windowID = "history"
 
@@ -40,9 +41,7 @@ struct HistoryView: View {
                 case .entries:
                     EntriesView(app: model)
                 case .clients:
-                    ContentUnavailableView(
-                        "Clients", systemImage: Section.clients.systemImage,
-                        description: Text("Adding, renaming and archiving clients arrives in a later release."))
+                    ClientsView(app: model)
                 case .export:
                     ContentUnavailableView(
                         "Export", systemImage: Section.export.systemImage,
