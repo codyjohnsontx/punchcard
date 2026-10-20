@@ -1,9 +1,10 @@
 import AppKit
+import KeyboardShortcuts
 import PunchcardCore
 import SwiftUI
 
-/// The Settings window: General (menu bar style, week start, away threshold, launch at login)
-/// and Data (where the database is, the app version). Every change applies as soon as it is made.
+/// The Settings window: General (menu bar style, week start, away threshold, launch at login,
+/// the global shortcut) and Data (where the database is, the app version). Every change applies as soon as it is made.
 struct SettingsView: View {
     @State private var settings: SettingsModel
 
@@ -55,6 +56,7 @@ private struct GeneralSettingsView: View {
                     .font(.callout)
                     .foregroundStyle(.secondary)
                 LaunchAtLoginRow(settings: settings)
+                ShortcutRow()
                 if let error = settings.error {
                     Text(error).foregroundStyle(.red)
                 }
@@ -84,6 +86,49 @@ private struct LaunchAtLoginRow: View {
         if let error = settings.loginItemError {
             Text(error).foregroundStyle(.red)
         }
+    }
+}
+
+/// The global start/stop shortcut: off until recorded. Click to record, Escape cancels, Delete
+/// or the clear button removes it.
+private struct ShortcutRow: View {
+    @State private var recorder = ShortcutRecorder()
+
+    var body: some View {
+        LabeledContent("Start/stop shortcut:") {
+            HStack(spacing: 4) {
+                Button(action: recorder.toggleRecording) {
+                    Text(title)
+                        .foregroundStyle(recorder.shortcut == nil && !recorder.isRecording ? .secondary : .primary)
+                        .frame(minWidth: 120)
+                }
+                if recorder.shortcut != nil, !recorder.isRecording {
+                    Button("Remove Shortcut", systemImage: "xmark.circle.fill", action: recorder.clear)
+                        .labelStyle(.iconOnly)
+                        .buttonStyle(.borderless)
+                        .foregroundStyle(.secondary)
+                        .help("Remove the shortcut")
+                }
+            }
+        }
+        // Leaving the window, or closing it, ends recording so the shortcut works again.
+        .onReceive(NotificationCenter.default.publisher(for: NSWindow.didResignKeyNotification)) { _ in
+            recorder.stopRecording()
+        }
+        .onDisappear { recorder.stopRecording() }
+        Text(recorder.isRecording
+            ? "Type the shortcut. Escape cancels, Delete removes it."
+            : "Stops the running clock, or starts the client you used last, from any app.")
+            .font(.callout)
+            .foregroundStyle(.secondary)
+        if let rejection = recorder.rejection {
+            Text(rejection).foregroundStyle(.red)
+        }
+    }
+
+    private var title: String {
+        if recorder.isRecording { return "Type Shortcut…" }
+        return recorder.shortcut?.description ?? "Suggested: \(KeyboardShortcuts.Shortcut.suggested)"
     }
 }
 

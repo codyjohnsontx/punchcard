@@ -44,6 +44,40 @@ public struct TimerEngine: Sendable {
         }
     }
 
+    /// What a press of the global start/stop shortcut did.
+    public enum PressResult: Equatable, Sendable {
+        /// The running entry was stopped; this is the entry as it ended.
+        case stopped(Entry)
+        /// Nothing was running, so the most recently used client's clock started.
+        case started(Entry)
+        /// Nothing was running and no client is active, so nothing changed.
+        case noClient
+    }
+
+    /// The global shortcut: stops the running entry if there is one, otherwise starts the most
+    /// recently used client, the active client of the latest started entry. With no entries
+    /// for an active client yet, it starts the first active client by name, which in
+    /// single-client mode is the only one.
+    @discardableResult
+    public func press(at date: Date? = nil) throws -> PressResult {
+        let date = Self.wholeSeconds(date ?? now())
+        return try database.queue.write { db in
+            if let running = try EntryRepository.running(db) {
+                return .stopped(try Self.end(running, at: date, db))
+            }
+            let lastUsed = try Int64.fetchOne(db, sql: """
+                SELECT entries.client_id FROM entries JOIN clients ON clients.id = entries.client_id
+                WHERE clients.archived_at IS NULL
+                ORDER BY entries.started_at DESC, entries.id DESC LIMIT 1
+                """)
+            guard let clientID = try lastUsed ?? ClientRepository.all(includeArchived: false, db).first?.id else {
+                return .noClient
+            }
+            return .started(
+                try Entry(clientID: clientID, startedAt: date, createdAt: date, updatedAt: date).insertAndFetch(db))
+        }
+    }
+
     /// Drop & continue for an away prompt: ends the entry at `awaySince` and starts a new entry
     /// for the same client at `returnedAt`. Returns the new entry, or nil when the entry had
     /// already stopped; it then only clamps its end, as `dropStop` does.

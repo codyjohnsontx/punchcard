@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import KeyboardShortcuts
 import Observation
 import OSLog
 import PunchcardCore
@@ -49,6 +50,9 @@ final class AppModel {
         refresh()
         observeSleepAndWake()
         onboardIfNeeded()
+        // The model lives as long as the app, so the handler is never removed. It stays
+        // inactive until the user records a shortcut in Settings.
+        KeyboardShortcuts.onKeyDown(for: .startStop) { [weak self] in self?.pressShortcut() }
     }
 
     /// Runs the first-launch tasks: launch at login is on by default.
@@ -88,6 +92,11 @@ final class AppModel {
 
     func stop() {
         perform { try $0.stop() }
+    }
+
+    /// The global shortcut: stops the running clock, or starts the client used last.
+    func pressShortcut() {
+        perform { try $0.press() }
     }
 
     private func perform(_ action: (TimerEngine) throws -> Void) {

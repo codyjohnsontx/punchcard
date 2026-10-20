@@ -9,6 +9,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/groue/GRDB.swift", exact: "7.11.1"),
+        .package(url: "https://github.com/sindresorhus/KeyboardShortcuts", exact: "2.4.0"),
     ],
     targets: [
         .target(
@@ -18,7 +19,7 @@ let package = Package(
         ),
         .executableTarget(
             name: "Punchcard",
-            dependencies: ["PunchcardCore"]
+            dependencies: ["PunchcardCore", "KeyboardShortcuts"]
         ),
         .testTarget(
             name: "PunchcardCoreTests",
