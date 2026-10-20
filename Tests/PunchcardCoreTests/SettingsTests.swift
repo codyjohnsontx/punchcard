@@ -76,36 +76,27 @@ import Testing
         (.functionKey, .record),
     ])
     func keysWithoutModifiers(key: ShortcutRecording.Key, action: ShortcutRecording.Action) {
-        #expect(ShortcutRecording.action(key: key, modifiers: [], isTakenBySystem: false) == action)
+        #expect(ShortcutRecording.action(key: key, modifiers: []) == action)
     }
 
     @Test func controlOptionPIsRecorded() {
-        #expect(ShortcutRecording.action(key: .other, modifiers: [.control, .option], isTakenBySystem: false) == .record)
+        #expect(ShortcutRecording.action(key: .other, modifiers: [.control, .option]) == .record)
     }
 
     @Test(arguments: [ShortcutRecording.Modifiers.command, .control, .option, [.command, .shift]])
     func aCommandControlOrOptionModifierIsEnough(modifiers: ShortcutRecording.Modifiers) {
-        #expect(ShortcutRecording.action(key: .other, modifiers: modifiers, isTakenBySystem: false) == .record)
+        #expect(ShortcutRecording.action(key: .other, modifiers: modifiers) == .record)
     }
 
     @Test(arguments: [ShortcutRecording.Modifiers.shift, .function, [.shift, .function]])
     func shiftOrFunctionAloneIsRejected(modifiers: ShortcutRecording.Modifiers) {
-        #expect(ShortcutRecording.action(key: .other, modifiers: modifiers, isTakenBySystem: false)
+        #expect(ShortcutRecording.action(key: .other, modifiers: modifiers)
             == .reject(message: ShortcutRecording.needsModifierMessage))
-        #expect(ShortcutRecording.action(key: .functionKey, modifiers: modifiers, isTakenBySystem: false) == .record)
+        #expect(ShortcutRecording.action(key: .functionKey, modifiers: modifiers) == .record)
     }
 
     @Test func modifiedEscapeAndDeleteAreShortcutsLikeAnyOtherKey() {
-        #expect(ShortcutRecording.action(key: .escape, modifiers: [.command], isTakenBySystem: false) == .record)
-        #expect(ShortcutRecording.action(key: .delete, modifiers: [.control, .option], isTakenBySystem: false) == .record)
-    }
-
-    @Test func aShortcutMacOSUsesIsRejected() {
-        #expect(ShortcutRecording.action(key: .other, modifiers: [.command], isTakenBySystem: true)
-            == .reject(message: ShortcutRecording.takenBySystemMessage))
-        // Escape still cancels and an unmodified key still needs a modifier first.
-        #expect(ShortcutRecording.action(key: .escape, modifiers: [], isTakenBySystem: true) == .cancel)
-        #expect(ShortcutRecording.action(key: .other, modifiers: [.shift], isTakenBySystem: true)
-            == .reject(message: ShortcutRecording.needsModifierMessage))
+        #expect(ShortcutRecording.action(key: .escape, modifiers: [.command]) == .record)
+        #expect(ShortcutRecording.action(key: .delete, modifiers: [.control, .option]) == .record)
     }
 }

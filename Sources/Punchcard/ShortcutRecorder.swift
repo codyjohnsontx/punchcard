@@ -51,9 +51,7 @@ final class ShortcutRecorder {
     /// Returns the event to let it through, or nil to swallow it.
     private func handle(_ event: NSEvent) -> NSEvent? {
         let candidate = KeyboardShortcuts.Shortcut(event: event)
-        let action = ShortcutRecording.action(
-            key: Self.key(of: event), modifiers: Self.modifiers(of: event),
-            isTakenBySystem: candidate?.isUsedByMacOS ?? false)
+        let action = ShortcutRecording.action(key: Self.key(of: event), modifiers: Self.modifiers(of: event))
         switch action {
         case .cancel:
             stopRecording()

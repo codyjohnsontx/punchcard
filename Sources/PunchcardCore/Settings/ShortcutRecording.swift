@@ -41,11 +41,9 @@ public enum ShortcutRecording {
     }
 
     public static let needsModifierMessage = "Include Command, Control or Option in the shortcut."
-    public static let takenBySystemMessage = "macOS already uses this shortcut. Choose another one."
 
-    /// The action for `key` pressed with `modifiers`; `isTakenBySystem` says whether macOS has
-    /// the combination as one of its own enabled shortcuts.
-    public static func action(key: Key, modifiers: Modifiers, isTakenBySystem: Bool) -> Action {
+    /// The action for `key` pressed with `modifiers`.
+    public static func action(key: Key, modifiers: Modifiers) -> Action {
         if modifiers.isEmpty {
             switch key {
             case .escape: return .cancel
@@ -57,7 +55,6 @@ public enum ShortcutRecording {
         guard !modifiers.subtracting([.shift, .function]).isEmpty || key == .functionKey else {
             return .reject(message: needsModifierMessage)
         }
-        guard !isTakenBySystem else { return .reject(message: takenBySystemMessage) }
         return .record
     }
 }
