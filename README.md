@@ -132,8 +132,10 @@ The tables and rules are documented in [docs/schema.md](docs/schema.md).
 
 ### CSV files
 
-Both exports are UTF-8 with a header row, open directly in Numbers or Excel, and leave out
-a clock that is still running. An entry that touches the range is included.
+Both exports are UTF-8 with a header row and leave out a clock that is still running. An
+entry that touches the range is included. The files open directly in Numbers. In Excel for
+Mac, if client names or notes contain accented characters or emoji, use Data > From
+Text/CSV and pick UTF-8.
 
 - **Entries**, `punchcard-entries-2026-10-01_2026-10-31.csv`: one row per entry, oldest
   first, whole even when it crosses midnight or the edge of the range.
