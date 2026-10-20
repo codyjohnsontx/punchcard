@@ -2,8 +2,8 @@ import Foundation
 
 /// What the Settings window's General tab shows and edits, in the units the user sees: the
 /// menu bar style, the week start day and the away threshold in whole minutes. The threshold
-/// is clamped to 1...120 minutes, the range the `settings` table accepts in seconds, so any
-/// value typed into the field is stored valid.
+/// is clamped to 1...120 minutes, the range the `settings` table accepts in seconds, so
+/// whatever is assigned is stored valid.
 public struct SettingsViewModel: Equatable, Sendable {
     /// One of the seven days the week can start on.
     public struct Weekday: Equatable, Identifiable, Sendable {
