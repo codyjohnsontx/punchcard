@@ -8,9 +8,10 @@ SQLite file you own.
 
 > Early days. Punchcard starts and stops the clock, shows today, this week and this month
 > per client, asks whether to keep the time when you come back from being away, and has a
-> History window where you review past days and weeks and add, edit or delete entries. The
-> Clients and Export tabs and the Settings window are still empty; managing clients, CSV
-> export, launch at login and a global shortcut arrive in the next releases.
+> History window where you review past days and weeks and add, edit or delete entries, and a
+> Settings window for the menu bar style, the week start and the away threshold. The Clients
+> and Export tabs are still empty; managing clients, CSV export, launch at login and a global
+> shortcut arrive in the next releases.
 
 ## Requirements
 
@@ -86,13 +87,8 @@ It prints `OK` when the zip is exactly what the release built.
 - **Away from the Mac.** If the clock runs while the Mac sits idle or asleep for 10 minutes
   or more, Punchcard asks when you come back: "You were away for 23 minutes (since 2:15 PM)."
   **Keep** leaves the time in, **Drop & Continue** ends the entry when you left and starts a
-  new one from when you came back, and **Drop & Stop** ends the entry when you left. Until the
-  Settings window arrives, change the threshold (in seconds, 60 to 7200) from Terminal:
-
-  ```sh
-  sqlite3 ~/Library/Application\ Support/Punchcard/punchcard.sqlite \
-    "INSERT OR REPLACE INTO settings (key, value) VALUES ('idle_threshold_seconds', '300')"
-  ```
+  new one from when you came back, and **Drop & Stop** ends the entry when you left. Change
+  the 10 minutes in Settings.
 
 - **History.** **History…** in the dropdown opens a window with past days and weeks. **Day**
   lists that day's entries with client, start, end, duration and note; **Week** shows a column
@@ -104,6 +100,12 @@ It prints `OK` when the zip is exactly what the release built.
   forgot to clock. An end before the start is refused. A yellow warning marks an entry that
   overlaps another one, in the list and in the editor, but you can still save it. Delete asks
   first.
+- **Settings.** **Settings…** in the dropdown opens the Settings window. **General** chooses
+  whether the menu bar shows the running time or only the icon, which day the week starts on
+  (Monday unless you change it; the week total follows at once) and how many minutes away, 1
+  to 120, bring up the keep-or-drop question. Every change applies as soon as you make it.
+  **Data** shows where the database is, with a button to reveal it in Finder, and the app
+  version.
 - **Quitting.** Quit from the dropdown. A running clock keeps running while the app is closed
   and is still running when you open it again.
 - **Opening at login.** Not automatic yet. Add Punchcard under
@@ -171,7 +173,7 @@ with the tag's version, and publishes a GitHub Release with the zip and its chec
 
 ## Roadmap
 
-- Client management, CSV export, settings, launch at login and a global shortcut.
+- Client management, CSV export, launch at login and a global shortcut.
 - A Tauri app for Windows and Linux, in this repository, sharing the same data format
   ([docs/schema.md](docs/schema.md)).
 

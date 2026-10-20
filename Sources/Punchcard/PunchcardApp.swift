@@ -23,7 +23,7 @@ struct PunchcardApp: App {
         .defaultSize(width: 720, height: 480)
 
         Settings {
-            SettingsView()
+            SettingsView(app: model)
         }
     }
 }
