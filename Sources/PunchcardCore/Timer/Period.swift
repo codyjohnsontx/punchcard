@@ -11,10 +11,8 @@ public enum Period: Sendable, CaseIterable {
     /// The interval of this period containing `date`. `weekStartDay` uses the settings'
     /// ISO numbering, 1 = Monday ... 7 = Sunday, and only affects `.week`.
     public func interval(containing date: Date, calendar: Calendar = .current, weekStartDay: Int) -> DateInterval {
-        precondition((1...7).contains(weekStartDay), "week start day must be 1...7")
         var calendar = calendar
-        // Calendar counts weekdays 1 = Sunday ... 7 = Saturday.
-        calendar.firstWeekday = weekStartDay % 7 + 1
+        calendar.firstWeekday = Calendar.firstWeekday(weekStartDay: weekStartDay)
         let component: Calendar.Component = switch self {
         case .day: .day
         case .week: .weekOfYear
@@ -24,5 +22,14 @@ public enum Period: Sendable, CaseIterable {
             preconditionFailure("calendar has no \(component) interval for \(date)")
         }
         return interval
+    }
+}
+
+extension Calendar {
+    /// `Calendar.firstWeekday` (1 = Sunday ... 7 = Saturday) for a week start day in the
+    /// settings' ISO numbering (1 = Monday ... 7 = Sunday).
+    public static func firstWeekday(weekStartDay: Int) -> Int {
+        precondition((1...7).contains(weekStartDay), "week start day must be 1...7")
+        return weekStartDay % 7 + 1
     }
 }

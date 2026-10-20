@@ -20,6 +20,8 @@ final class AppModel {
     var lastError: String? { writeError ?? readError }
 
     let database: Database?
+    /// Where the database lives, shown in Settings > Data.
+    let databaseURL: URL?
     private let engine: TimerEngine?
     private var ticker: Task<Void, Never>?
     private var away = AwayDetector(threshold: TimeInterval(SettingsStore.defaultIdleThresholdSeconds))
@@ -29,13 +31,17 @@ final class AppModel {
     init() {
         let now = Date()
         var database: Database?
+        var databaseURL: URL?
         var openError: String?
         do {
-            database = try Database.open(at: Database.defaultURL())
+            let url = try Database.defaultURL()
+            databaseURL = url
+            database = try Database.open(at: url)
         } catch {
             openError = error.localizedDescription
         }
         self.database = database
+        self.databaseURL = databaseURL
         self.engine = database.map { TimerEngine(database: $0) }
         self.openError = openError
         self.snapshot = Self.emptySnapshot(now: now)
