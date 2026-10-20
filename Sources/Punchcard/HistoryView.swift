@@ -3,7 +3,7 @@ import SwiftUI
 
 /// The History window: a sidebar with Entries, Clients and Export. Entries shows past days
 /// and weeks and edits entries; Clients adds, renames, archives and deletes clients; Export
-/// arrives in a later release.
+/// saves CSV files.
 struct HistoryView: View {
     static let windowID = "history"
 
@@ -43,9 +43,7 @@ struct HistoryView: View {
                 case .clients:
                     ClientsView(app: model)
                 case .export:
-                    ContentUnavailableView(
-                        "Export", systemImage: Section.export.systemImage,
-                        description: Text("CSV export arrives in a later release."))
+                    ExportView(app: model)
                 }
             }
         }

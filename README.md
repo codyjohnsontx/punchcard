@@ -9,9 +9,9 @@ SQLite file you own.
 > Early days. Punchcard starts and stops the clock, shows today, this week and this month
 > per client, asks whether to keep the time when you come back from being away, and has a
 > History window where you review past days and weeks, add, edit or delete entries, and
-> manage clients, and a Settings window for the menu bar style, the week start, the away
-> threshold and launch at login. The Export tab is still empty; CSV export and a global
-> shortcut arrive in the next releases.
+> manage clients and export CSV files, and a Settings window for the menu bar style, the week
+> start, the away threshold and launch at login. A global shortcut arrives in the next
+> release.
 
 ## Requirements
 
@@ -101,6 +101,9 @@ It prints `OK` when the zip is exactly what the release built.
   forgot to clock. An end before the start is refused. A yellow warning marks an entry that
   overlaps another one, in the list and in the editor, but you can still save it. Delete asks
   first.
+- **Export.** The **Export** tab of the History window saves a CSV file of this week, this
+  month, last month, all time or a custom range of days, as either a list of entries or a
+  daily summary. See [CSV files](#csv-files) for the columns.
 - **Settings.** **Settings…** in the dropdown opens the Settings window. **General** chooses
   whether the menu bar shows the running time or only the icon, which day the week starts on
   (Monday unless you change it; the week total follows at once) and how many minutes away, 1
@@ -132,6 +135,38 @@ sqlite3 ~/Library/Application\ Support/Punchcard/punchcard.sqlite \
 ```
 
 The tables and rules are documented in [docs/schema.md](docs/schema.md).
+
+### CSV files
+
+Both exports are UTF-8 with a header row and leave out a clock that is still running. An
+entry that touches the range is included. The files open directly in Numbers. In Excel for
+Mac, if client names or notes contain accented characters or emoji, use Data > From
+Text/CSV and pick UTF-8.
+
+- **Entries**, `punchcard-entries-2026-10-01_2026-10-31.csv`: one row per entry, oldest
+  first, whole even when it crosses midnight or the edge of the range.
+
+  | Column | Example |
+  | --- | --- |
+  | `id` | `42` |
+  | `client` | `Acme` |
+  | `started_at` | `2026-10-15T09:00:00-05:00`, your time zone's offset |
+  | `ended_at` | `2026-10-15T11:30:00-05:00` |
+  | `duration_seconds` | `9000` |
+  | `duration_hours` | `2.50` |
+  | `note` | `Design review` |
+
+- **Daily summary**, `punchcard-daily-2026-10-01_2026-10-31.csv`: one row per day and
+  client with time that day, sorted by date then client. An entry that crosses midnight is
+  split between its days, and only the part inside the range counts, so the hours add up
+  to the dropdown's totals for the same days.
+
+  | Column | Example |
+  | --- | --- |
+  | `date` | `2026-10-15` |
+  | `client` | `Acme` |
+  | `duration_seconds` | `9000` |
+  | `duration_hours` | `2.50` |
 
 ## Build from source
 
@@ -177,7 +212,7 @@ with the tag's version, and publishes a GitHub Release with the zip and its chec
 
 ## Roadmap
 
-- CSV export and a global shortcut.
+- A global shortcut.
 - A Tauri app for Windows and Linux, in this repository, sharing the same data format
   ([docs/schema.md](docs/schema.md)).
 
