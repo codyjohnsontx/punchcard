@@ -1,6 +1,7 @@
 import AppKit
 import Foundation
 import Observation
+import OSLog
 import PunchcardCore
 
 /// The app's state: one snapshot of the database that the menu bar label and the dropdown
@@ -47,6 +48,22 @@ final class AppModel {
         self.snapshot = Self.emptySnapshot(now: now)
         refresh()
         observeSleepAndWake()
+        onboardIfNeeded()
+    }
+
+    /// Runs the first-launch tasks: launch at login is on by default.
+    private func onboardIfNeeded() {
+        guard let database else { return }
+        let log = Logger(subsystem: "com.codyjohnsontx.punchcard", category: "onboarding")
+        do {
+            switch try LaunchAtLogin.onboardIfNeeded(store: SettingsStore(database: database), loginItem: SystemLoginItem()) {
+            case .alreadyOnboarded: break
+            case .notBundled: log.notice("Not running from an app bundle; skipped registering the login item")
+            case .registered: log.notice("Registered the login item")
+            }
+        } catch {
+            log.error("First-launch tasks failed, will retry next launch: \(error.localizedDescription, privacy: .public)")
+        }
     }
 
     var label: MenuBarLabel { MenuBarLabel(snapshot) }
