@@ -20,7 +20,7 @@ public enum ShortcutRecording {
     public enum Key: Equatable, Sendable {
         case escape
         case tab
-        /// Delete, Forward Delete or Backspace.
+        /// Delete (Backspace).
         case delete
         /// F1 through F20.
         case functionKey

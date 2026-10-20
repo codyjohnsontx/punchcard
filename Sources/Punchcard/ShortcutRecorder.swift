@@ -90,7 +90,7 @@ final class ShortcutRecorder {
         switch Int(event.keyCode) {
         case kVK_Escape: .escape
         case kVK_Tab: .tab
-        case kVK_Delete, kVK_ForwardDelete: .delete
+        case kVK_Delete: .delete
         case let code where functionKeyCodes.contains(code): .functionKey
         default: .other
         }

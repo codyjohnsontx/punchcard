@@ -128,7 +128,7 @@ private struct ShortcutRow: View {
 
     private var title: String {
         if recorder.isRecording { return "Type Shortcut…" }
-        return recorder.shortcut?.description ?? "Suggested: \(KeyboardShortcuts.Shortcut.suggested)"
+        return recorder.shortcut?.displayName ?? "Suggested: \(KeyboardShortcuts.Shortcut.suggested.displayName)"
     }
 }
 
