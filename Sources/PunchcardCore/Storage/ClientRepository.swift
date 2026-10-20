@@ -57,7 +57,7 @@ public struct ClientRepository: Sendable {
 
     /// Trims Unicode whitespace and newlines, NFC-normalizes, and refuses a blank name or one
     /// equal ignoring case to another client's name.
-    private static func validName(_ name: String, excluding id: Int64?, in db: GRDB.Database) throws -> String {
+    static func validName(_ name: String, excluding id: Int64?, in db: GRDB.Database) throws -> String {
         let name = name.trimmingCharacters(in: .whitespacesAndNewlines).precomposedStringWithCanonicalMapping
         guard !name.isEmpty else { throw ClientNameError.blank }
         let others = try String.fetchAll(db, sql: "SELECT name FROM clients WHERE id IS NOT ?", arguments: [id])
