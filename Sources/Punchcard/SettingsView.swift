@@ -43,14 +43,9 @@ private struct GeneralSettingsView: View {
                     }
                 }
                 LabeledContent("Ask after being away for:") {
-                    HStack(spacing: 4) {
-                        TextField("Minutes", value: $settings.idleThresholdMinutes, format: .number)
-                            .labelsHidden()
-                            .multilineTextAlignment(.trailing)
-                            .frame(width: 48)
-                        Stepper("Minutes", value: $settings.idleThresholdMinutes, in: SettingsViewModel.idleThresholdMinutesRange)
-                            .labelsHidden()
-                        Text(settings.idleThresholdMinutes == 1 ? "minute" : "minutes")
+                    Stepper(value: $settings.idleThresholdMinutes, in: SettingsViewModel.idleThresholdMinutesRange) {
+                        Text(settings.idleThresholdMinutes == 1 ? "1 minute" : "\(settings.idleThresholdMinutes) minutes")
+                            .monospacedDigit()
                     }
                 }
                 Text("While the clock runs, idle or asleep this long asks whether to keep the time when you come back.")
