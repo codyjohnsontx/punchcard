@@ -37,6 +37,17 @@ public struct EntryRepository: Sendable {
             .fetchAll(db)
     }
 
+    /// Completed entries, oldest first: every one, or only those overlapping `interval`.
+    static func completed(overlapping interval: DateInterval?, _ db: GRDB.Database) throws -> [Entry] {
+        var request = Entry.filter(sql: "ended_at IS NOT NULL")
+        if let interval {
+            request = request.filter(
+                sql: "started_at < ? AND ended_at > ?",
+                arguments: [Int64(interval.end.timeIntervalSince1970), Int64(interval.start.timeIntervalSince1970)])
+        }
+        return try request.order(sql: "started_at, id").fetchAll(db)
+    }
+
     /// Inserts an entry and returns it as stored (timestamps truncated to whole seconds).
     @discardableResult
     public func insert(_ entry: Entry) throws -> Entry {
