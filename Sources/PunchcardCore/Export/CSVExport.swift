@@ -53,13 +53,13 @@ public enum CSVExport {
             let requested = try range.interval(
                 now: now, calendar: calendar, weekStartDay: try SettingsStore.weekStartDay(db))
             let entries = try EntryRepository.completed(overlapping: requested, db)
-            // All time covers the days of the first start and the last end; today when there
-            // is no entry at all.
+            // All time covers the days of the first start and the last second before the last
+            // end; today when there is no entry at all.
+            let firstStart = entries.first?.startedAt ?? now
+            let lastEnd = entries.compactMap(\.endedAt).max().map { max($0 - 1, firstStart) } ?? now
             let interval = requested ?? DateInterval(
-                start: Period.day.interval(
-                    containing: entries.first?.startedAt ?? now, calendar: calendar, weekStartDay: 1).start,
-                end: Period.day.interval(
-                    containing: entries.compactMap(\.endedAt).max() ?? now, calendar: calendar, weekStartDay: 1).end)
+                start: Period.day.interval(containing: firstStart, calendar: calendar, weekStartDay: 1).start,
+                end: Period.day.interval(containing: lastEnd, calendar: calendar, weekStartDay: 1).end)
             let clientNames = try DayViewModel.clientNames(db)
             let (header, rows) = switch kind {
             case .entries:

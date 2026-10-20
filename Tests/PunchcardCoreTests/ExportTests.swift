@@ -258,6 +258,14 @@ private func lines(_ text: String) -> [String] {
         ])
     }
 
+    @Test func allTimeEndsOnTheDayBeforeALastEndAtMidnight() throws {
+        let (database, acme, _) = try database()
+        try EntryRepository(database: database).insert(entry(nil, acme, local(2026, 10, 13, 22), local(2026, 10, 14, 0)))
+        let document = try CSVExport.document(kind: .dailySummary, range: .allTime, from: database, now: now, calendar: chicago)
+        #expect(document.fileName == "punchcard-daily-2026-09-30_2026-10-13.csv")
+        #expect(lines(document.text).suffix(3) == ["2026-10-13,Acme,7200,2.00", "2026-10-13,Globex,4500,1.25", ""])
+    }
+
     @Test func allTimeWithNoEntriesIsTodayAndHeaderOnly() throws {
         let database = try Database.inMemory()
         let document = try CSVExport.document(kind: .entries, range: .allTime, from: database, now: now, calendar: chicago)
