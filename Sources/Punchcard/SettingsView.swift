@@ -2,7 +2,8 @@ import AppKit
 import PunchcardCore
 import SwiftUI
 
-/// The Settings window: General (menu bar style, week start, away threshold) and Data (where
+/// The Settings window: General (menu bar style, week start, away threshold, launch at login)
+/// and Data (where
 /// the database is, the app version). Every change applies as soon as it is made.
 struct SettingsView: View {
     @State private var settings: SettingsModel
@@ -20,6 +21,9 @@ struct SettingsView: View {
         }
         .frame(width: 460)
         .onAppear { settings.reload() }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            settings.reloadLoginItem()
+        }
     }
 }
 
@@ -51,6 +55,7 @@ private struct GeneralSettingsView: View {
                 Text("While the clock runs, idle or asleep this long asks whether to keep the time when you come back.")
                     .font(.callout)
                     .foregroundStyle(.secondary)
+                LaunchAtLoginRow(settings: settings)
                 if let error = settings.error {
                     Text(error).foregroundStyle(.red)
                 }
@@ -59,6 +64,27 @@ private struct GeneralSettingsView: View {
         .formStyle(.grouped)
         .scrollDisabled(true)
         .fixedSize(horizontal: false, vertical: true)
+    }
+}
+
+private struct LaunchAtLoginRow: View {
+    @Bindable var settings: SettingsModel
+
+    var body: some View {
+        let row = settings.launchAtLogin
+        Toggle("Launch at login", isOn: $settings.launchesAtLogin)
+            .disabled(!row.isToggleEnabled)
+        if let message = row.message {
+            Text(message)
+                .font(.callout)
+                .foregroundStyle(.secondary)
+        }
+        if row.showsOpenSystemSettings {
+            Button("Open Login Items Settings") { settings.openLoginItemsSettings() }
+        }
+        if let error = settings.loginItemError {
+            Text(error).foregroundStyle(.red)
+        }
     }
 }
 

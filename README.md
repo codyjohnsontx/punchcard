@@ -9,9 +9,9 @@ SQLite file you own.
 > Early days. Punchcard starts and stops the clock, shows today, this week and this month
 > per client, asks whether to keep the time when you come back from being away, and has a
 > History window where you review past days and weeks, add, edit or delete entries, and
-> manage clients, and a Settings window for the menu bar style, the week start and the away
-> threshold. The Export tab is still empty; CSV export, launch at login and a global shortcut
-> arrive in the next releases.
+> manage clients, and a Settings window for the menu bar style, the week start, the away
+> threshold and launch at login. The Export tab is still empty; CSV export and a global
+> shortcut arrive in the next releases.
 
 ## Requirements
 
@@ -104,13 +104,16 @@ It prints `OK` when the zip is exactly what the release built.
 - **Settings.** **Settings…** in the dropdown opens the Settings window. **General** chooses
   whether the menu bar shows the running time or only the icon, which day the week starts on
   (Monday unless you change it; the week total follows at once) and how many minutes away, 1
-  to 120, bring up the keep-or-drop question. Every change applies as soon as you make it.
-  **Data** shows where the database is, with a button to reveal it in Finder, and the app
+  to 120, bring up the keep-or-drop question, and whether Punchcard opens at login. Every
+  change applies as soon as you make it. **Data** shows where the database is, with a button to reveal it in Finder, and the app
   version.
 - **Quitting.** Quit from the dropdown. A running clock keeps running while the app is closed
   and is still running when you open it again.
-- **Opening at login.** Not automatic yet. Add Punchcard under
-  **System Settings > General > Login Items** if you want it to start with your Mac.
+- **Opening at login.** On by default: the first time you open Punchcard it adds itself to
+  your login items, and macOS shows a notice saying so. Turn it off with **Launch at login**
+  in Settings or in **System Settings > General > Login Items**; Punchcard never turns it back
+  on by itself. If you turned it off in System Settings, Settings says so and has a button
+  that opens that page, where you can allow it again.
 
 ## Where your data is
 
@@ -174,7 +177,7 @@ with the tag's version, and publishes a GitHub Release with the zip and its chec
 
 ## Roadmap
 
-- CSV export, launch at login and a global shortcut.
+- CSV export and a global shortcut.
 - A Tauri app for Windows and Linux, in this repository, sharing the same data format
   ([docs/schema.md](docs/schema.md)).
 
