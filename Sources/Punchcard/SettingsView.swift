@@ -3,8 +3,7 @@ import PunchcardCore
 import SwiftUI
 
 /// The Settings window: General (menu bar style, week start, away threshold, launch at login)
-/// and Data (where
-/// the database is, the app version). Every change applies as soon as it is made.
+/// and Data (where the database is, the app version). Every change applies as soon as it is made.
 struct SettingsView: View {
     @State private var settings: SettingsModel
 

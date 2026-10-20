@@ -105,8 +105,8 @@ It prints `OK` when the zip is exactly what the release built.
   whether the menu bar shows the running time or only the icon, which day the week starts on
   (Monday unless you change it; the week total follows at once) and how many minutes away, 1
   to 120, bring up the keep-or-drop question, and whether Punchcard opens at login. Every
-  change applies as soon as you make it. **Data** shows where the database is, with a button to reveal it in Finder, and the app
-  version.
+  change applies as soon as you make it. **Data** shows where the database is, with a button
+  to reveal it in Finder, and the app version.
 - **Quitting.** Quit from the dropdown. A running clock keeps running while the app is closed
   and is still running when you open it again.
 - **Opening at login.** On by default: the first time you open Punchcard it adds itself to
