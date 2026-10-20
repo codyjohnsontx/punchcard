@@ -70,9 +70,10 @@ It prints `OK` when the zip is exactly what the release built.
 
 - **Start and stop.** Click the menu bar item. With one client, the dropdown has a single
   Start or Stop button. While the clock runs, the menu bar shows the running time, such as
-  `● 1:42`.
-- **Totals.** The dropdown shows today, this week and this month. Weeks start on Monday.
-  Durations read as hours and minutes, so `160:15` is 160 hours 15 minutes.
+  `● 1:42`, unless Settings has it show only the icon.
+- **Totals.** The dropdown shows today, this week and this month. Weeks start on Monday
+  unless you change it in Settings. Durations read as hours and minutes, so `160:15` is 160
+  hours 15 minutes.
 - **Clients.** Punchcard starts with one client named `Default`. Once there are two or more,
   each client gets its own Start button and totals row, and the menu bar adds the running
   client's name. Only one clock runs at a time: starting another client stops the running one
