@@ -8,9 +8,9 @@ SQLite file you own.
 
 > Early days. Punchcard starts and stops the clock, shows today, this week and this month
 > per client, asks whether to keep the time when you come back from being away, and has a
-> History window where you review past days and weeks and add, edit or delete entries. The
-> Clients and Export tabs and the Settings window are still empty; managing clients, CSV
-> export, launch at login and a global shortcut arrive in the next releases.
+> History window where you review past days and weeks, add, edit or delete entries, and
+> manage clients. The Export tab and the Settings window are still empty; CSV export, launch
+> at login and a global shortcut arrive in the next releases.
 
 ## Requirements
 
@@ -75,13 +75,13 @@ It prints `OK` when the zip is exactly what the release built.
 - **Clients.** Punchcard starts with one client named `Default`. Once there are two or more,
   each client gets its own Start button and totals row, and the menu bar adds the running
   client's name. Only one clock runs at a time: starting another client stops the running one
-  at the same moment, so no minute is counted twice. Until the Clients tab arrives, add a client
-  from Terminal:
-
-  ```sh
-  sqlite3 ~/Library/Application\ Support/Punchcard/punchcard.sqlite \
-    "INSERT INTO clients (name, created_at) VALUES ('Acme', unixepoch())"
-  ```
+  at the same moment, so no minute is counted twice. Add, rename, archive and delete clients
+  in the History window's **Clients** tab. Archiving hides a client from the dropdown and the
+  client pickers while its entries stay in history and totals; unarchive it to bring it back.
+  A client with entries can't be deleted, only archived, and a client can't be archived while
+  its clock runs. The only active client can't be archived or deleted, so the dropdown always
+  has a clock; add another client first. With all other clients archived, the dropdown is back
+  to its single Start button.
 
 - **Away from the Mac.** If the clock runs while the Mac sits idle or asleep for 10 minutes
   or more, Punchcard asks when you come back: "You were away for 23 minutes (since 2:15 PM)."
@@ -171,7 +171,7 @@ with the tag's version, and publishes a GitHub Release with the zip and its chec
 
 ## Roadmap
 
-- Client management, CSV export, settings, launch at login and a global shortcut.
+- CSV export, settings, launch at login and a global shortcut.
 - A Tauri app for Windows and Linux, in this repository, sharing the same data format
   ([docs/schema.md](docs/schema.md)).
 
