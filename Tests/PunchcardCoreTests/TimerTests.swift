@@ -170,6 +170,103 @@ private func defaultClientID(_ db: PunchcardCore.Database) throws -> Int64 {
     }
 }
 
+/// The global shortcut's press: stop if running, else start the most recently used client.
+@Suite struct ShortcutPressTests {
+    @Test func singleClientPressStartsTheOnlyClientThenStopsIt() throws {
+        let db = try PunchcardCore.Database.inMemory()
+        let engine = TimerEngine(database: db)
+        let client = try defaultClientID(db)
+
+        guard case .started(let started) = try engine.press(at: local(2026, 10, 12, 9) + 0.5) else {
+            Issue.record("expected the first press to start the clock")
+            return
+        }
+        #expect(started.clientID == client)
+        #expect(started.startedAt == local(2026, 10, 12, 9))
+        #expect(try engine.running() == started)
+
+        guard case .stopped(let stopped) = try engine.press(at: local(2026, 10, 12, 10)) else {
+            Issue.record("expected the second press to stop the clock")
+            return
+        }
+        #expect(stopped.id == started.id)
+        #expect(stopped.endedAt == local(2026, 10, 12, 10))
+        #expect(try engine.running() == nil)
+        #expect(try EntryRepository(database: db).entries(overlapping: .distantPast, .distantFuture) == [stopped])
+    }
+
+    @Test func pressWhileRunningStopsWhicheverClientRuns() throws {
+        let db = try PunchcardCore.Database.inMemory()
+        let engine = TimerEngine(database: db)
+        let acme = try secondClient(db)
+        let running = try engine.start(clientID: acme, at: local(2026, 10, 12, 9))
+
+        let result = try engine.press(at: local(2026, 10, 12, 9, 45))
+
+        var ended = running
+        ended.endedAt = local(2026, 10, 12, 9, 45)
+        ended.updatedAt = local(2026, 10, 12, 9, 45)
+        #expect(result == .stopped(ended))
+        #expect(try engine.running() == nil)
+    }
+
+    @Test func pressStartsTheClientOfTheLatestStartedEntry() throws {
+        let db = try PunchcardCore.Database.inMemory()
+        let engine = TimerEngine(database: db)
+        let defaultClient = try defaultClientID(db)
+        let acme = try secondClient(db)
+        try engine.start(clientID: defaultClient, at: local(2026, 10, 12, 9))
+        try engine.start(clientID: acme, at: local(2026, 10, 12, 10))
+        try engine.stop(at: local(2026, 10, 12, 11))
+
+        guard case .started(let started) = try engine.press(at: local(2026, 10, 13, 8)) else {
+            Issue.record("expected the press to start the clock")
+            return
+        }
+        #expect(started.clientID == acme)
+        #expect(started.startedAt == local(2026, 10, 13, 8))
+    }
+
+    @Test func pressSkipsAnArchivedLastUsedClient() throws {
+        let db = try PunchcardCore.Database.inMemory()
+        let engine = TimerEngine(database: db)
+        let acme = try secondClient(db)
+        let beta = try #require(ClientRepository(database: db).insert(name: "Beta").id)
+        try engine.start(clientID: beta, at: local(2026, 10, 12, 8))
+        try engine.start(clientID: acme, at: local(2026, 10, 12, 9))
+        try engine.stop(at: local(2026, 10, 12, 10))
+        try ClientEditor(database: db).archive(id: acme)
+
+        guard case .started(let started) = try engine.press(at: local(2026, 10, 12, 11)) else {
+            Issue.record("expected the press to start the clock")
+            return
+        }
+        #expect(started.clientID == beta)
+    }
+
+    @Test func pressWithNoEntriesStartsTheFirstActiveClientByName() throws {
+        let db = try PunchcardCore.Database.inMemory()
+        let engine = TimerEngine(database: db)
+        let acme = try secondClient(db)
+
+        guard case .started(let started) = try engine.press(at: local(2026, 10, 12, 9)) else {
+            Issue.record("expected the press to start the clock")
+            return
+        }
+        #expect(started.clientID == acme)
+    }
+
+    @Test func pressWithNoActiveClientChangesNothing() throws {
+        let db = try PunchcardCore.Database.inMemory()
+        let engine = TimerEngine(database: db)
+        try db.queue.write { db in try db.execute(sql: "UPDATE clients SET archived_at = 0") }
+
+        #expect(try engine.press(at: local(2026, 10, 12, 9)) == .noClient)
+        #expect(try engine.running() == nil)
+        #expect(try EntryRepository(database: db).entries(overlapping: .distantPast, .distantFuture).isEmpty)
+    }
+}
+
 @Suite struct PeriodTests {
     @Test func dayIsLocalMidnightToMidnight() {
         let interval = Period.day.interval(containing: local(2026, 10, 14, 15, 30), calendar: chicago, weekStartDay: 1)

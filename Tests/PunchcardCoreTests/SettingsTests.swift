@@ -66,3 +66,37 @@ import Testing
     defer { try? FileManager.default.removeItem(at: folder) }
     #expect(AppInfo.version(of: try #require(Bundle(url: folder))) == nil)
 }
+
+@Suite struct ShortcutRecordingTests {
+    @Test(arguments: [
+        (ShortcutRecording.Key.escape, ShortcutRecording.Action.cancel),
+        (.tab, .cancelAndPassOn),
+        (.delete, .clear),
+        (.other, .reject(message: ShortcutRecording.needsModifierMessage)),
+        (.functionKey, .record),
+    ])
+    func keysWithoutModifiers(key: ShortcutRecording.Key, action: ShortcutRecording.Action) {
+        #expect(ShortcutRecording.action(key: key, modifiers: []) == action)
+    }
+
+    @Test func controlOptionPIsRecorded() {
+        #expect(ShortcutRecording.action(key: .other, modifiers: [.control, .option]) == .record)
+    }
+
+    @Test(arguments: [ShortcutRecording.Modifiers.command, .control, .option, [.command, .shift]])
+    func aCommandControlOrOptionModifierIsEnough(modifiers: ShortcutRecording.Modifiers) {
+        #expect(ShortcutRecording.action(key: .other, modifiers: modifiers) == .record)
+    }
+
+    @Test(arguments: [ShortcutRecording.Modifiers.shift, .function, [.shift, .function]])
+    func shiftOrFunctionAloneIsRejected(modifiers: ShortcutRecording.Modifiers) {
+        #expect(ShortcutRecording.action(key: .other, modifiers: modifiers)
+            == .reject(message: ShortcutRecording.needsModifierMessage))
+        #expect(ShortcutRecording.action(key: .functionKey, modifiers: modifiers) == .record)
+    }
+
+    @Test func modifiedEscapeAndDeleteAreShortcutsLikeAnyOtherKey() {
+        #expect(ShortcutRecording.action(key: .escape, modifiers: [.command]) == .record)
+        #expect(ShortcutRecording.action(key: .delete, modifiers: [.control, .option]) == .record)
+    }
+}

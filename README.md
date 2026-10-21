@@ -10,8 +10,7 @@ SQLite file you own.
 > per client, asks whether to keep the time when you come back from being away, and has a
 > History window where you review past days and weeks, add, edit or delete entries, and
 > manage clients and export CSV files, and a Settings window for the menu bar style, the week
-> start, the away threshold and launch at login. A global shortcut arrives in the next
-> release.
+> start, the away threshold, launch at login and an optional global start/stop shortcut.
 
 ## Requirements
 
@@ -107,9 +106,14 @@ It prints `OK` when the zip is exactly what the release built.
 - **Settings.** **Settings…** in the dropdown opens the Settings window. **General** chooses
   whether the menu bar shows the running time or only the icon, which day the week starts on
   (Monday unless you change it; the week total follows at once) and how many minutes away, 1
-  to 120, bring up the keep-or-drop question, and whether Punchcard opens at login. Every
-  change applies as soon as you make it. **Data** shows where the database is, with a button
-  to reveal it in Finder, and the app version.
+  to 120, bring up the keep-or-drop question, whether Punchcard opens at login, and the global
+  shortcut (see below). Every change applies as soon as you make it. **Data** shows where the
+  database is, with a button to reveal it in Finder, and the app version.
+- **Global shortcut.** Off until you set one. In Settings, click the **Start/stop shortcut**
+  field and press the keys you want, for example Control-Option-P (`⌃⌥P`, the suggestion
+  shown). Pressing it in any app stops the running clock, or, when nothing runs, starts the
+  client you used last (with one client, that client). Escape cancels recording; Delete or the
+  clear button removes the shortcut. It needs no Accessibility or other permission.
 - **Quitting.** Quit from the dropdown. A running clock keeps running while the app is closed
   and is still running when you open it again.
 - **Opening at login.** On by default: the first time you open Punchcard it adds itself to
@@ -212,7 +216,6 @@ with the tag's version, and publishes a GitHub Release with the zip and its chec
 
 ## Roadmap
 
-- A global shortcut.
 - A Tauri app for Windows and Linux, in this repository, sharing the same data format
   ([docs/schema.md](docs/schema.md)).
 
